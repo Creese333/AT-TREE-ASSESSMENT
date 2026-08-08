@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>A.T. High-Risk Tree Assessment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500;700;900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --forest:#1B3A2E;
+    --forest-dark:#0F2119;
+    --forest-light:#2C5240;
+    --parchment:#F3ECDA;
+    --parchment-deep:#EAE0C6;
+    --card:#FFFDF8;
+    --ink:#26261F;
+    --ink-soft:#615E4E;
+    --line:#DCCFA8;
+    --rust:#BD4515;
+    --amber:#C8871F;
+    --moss:#54724A;
+    --deep-red:#7E1F1F;
+    --white:#FFFFFF;
+    --radius:10px;
+    --shadow: 0 1px 2px rgba(27,58,46,0.08), 0 4px 14px rgba(27,58,46,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--parchment);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(27,58,46,0.06) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+  h1,h2,h3{font-family:'Roboto Slab',serif; color:var(--forest-dark); margin:0;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  #app{max-width:760px;margin:0 auto;min-height:100vh;background:var(--parchment);display:flex;flex-direction:column;}
+
+  /* ---- Topbar ---- */
+  .topbar{
+    background:linear-gradient(180deg,var(--forest) 0%, var(--forest-dark) 100%);
+    color:var(--parchment);
+    padding:16px 16px 0 16px;
+    position:sticky;top:0;z-index:20;
+    box-shadow:0 4px 16px rgba(0,0,0,0.18);
+  }
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .brand-mark{
+    flex:0 0 auto;
+    width:46px;height:46px;
+    background:var(--parchment);
+    color:var(--forest-dark);
+    border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Roboto Slab',serif;font-weight:900;font-size:15px;letter-spacing:0.5px;
+    border:2px solid var(--rust);
+    transform:rotate(-2deg);
+  }
+  .brand h1{color:var(--white);font-size:18px;line-height:1.15;font-weight:700;}
+  .brand p{margin:2px 0 0;font-size:12px;color:#C8D8CC;letter-spacing:0.3px;}
+  .tabs{display:flex;gap:2px;}
+  .tab{
+    flex:1;background:transparent;border:none;color:#B9CBBE;
+    padding:10px 4px 12px;font-family:'Inter',sans-serif;font-weight:600;font-size:12.5px;
+    cursor:pointer;border-bottom:3px solid transparent;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+  }
+  .tab.active{color:var(--white);border-bottom-color:var(--rust);}
+  .tab .badge{
+    background:var(--rust);color:var(--white);border-radius:20px;
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:1px 6px;min-width:16px;text-align:center;
+  }
+  .tab.active .badge{background:var(--amber);}
+
+  main{flex:1;padding:16px 14px 100px;}
+  .config-banner{
+    background:#F3E6E0;border:1.5px solid var(--rust);color:var(--rust);
+    padding:10px 12px;border-radius:8px;font-size:12.5px;font-weight:600;line-height:1.5;
+    margin:12px 14px 0;display:none;
+  }
+  .config-banner.show{display:block;}
+  .view{display:none;}
+  .view.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ---- Cards / fieldsets ---- */
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    margin-bottom:14px;
+    overflow:hidden;
+  }
+  .card-head{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 14px;
+    background:var(--parchment-deep);
+    border-bottom:1px solid var(--line);
+  }
+  .card-num{
+    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;
+    color:var(--white);background:var(--forest);
+    width:22px;height:22px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+  }
+  .card-head h2{font-size:14.5px;letter-spacing:0.2px;}
+  .card-body{padding:14px;}
+
+  .field{margin-bottom:14px;}
+  .field:last-child{margin-bottom:0;}
+  label.flabel{
+    display:block;font-size:12px;font-weight:600;color:var(--forest-dark);
+    margin-bottom:5px;text-transform:uppercase;letter-spacing:0.4px;
+  }
+  label.flabel .req{color:var(--rust);}
+  .hint{font-size:11.5px;color:var(--ink-soft);margin-top:4px;line-height:1.4;}
+  input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{
+    width:100%;padding:10px 11px;font-size:15px;font-family:'Inter',sans-serif;
+    border:1.5px solid var(--line);border-radius:8px;background:var(--white);color:var(--ink);
+  }
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--forest-light);outline-offset:1px;border-color:var(--forest-light);}
+  textarea{resize:vertical;min-height:70px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .row-id-btn{display:flex;gap:8px;}
+  .row-id-btn input{flex:1;}
+  .btn-mini{
+    flex:0 0 auto;border:1.5px solid var(--forest);background:var(--white);color:var(--forest-dark);
+    border-radius:8px;padding:0 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .btn-mini:active{background:var(--parchment-deep);}
+
+  /* checkbox / radio chip grids */
+  .chip-grid{display:flex;flex-wrap:wrap;gap:7px;}
+  .chip{
+    position:relative;
+  }
+  .chip input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;}
+  .chip span{
+    display:inline-block;padding:7px 11px;border-radius:20px;border:1.5px solid var(--line);
+    background:var(--white);font-size:12.5px;color:var(--ink);cursor:pointer;user-select:none;
+  }
+  .chip input:checked + span{background:var(--forest);border-color:var(--forest);color:var(--white);}
+  .chip input:focus-visible + span{outline:2px solid var(--rust);outline-offset:2px;}
+
+  .score-cards{display:flex;flex-direction:column;gap:8px;}
+  .score-card{position:relative;}
+  .score-card input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;}
+  .score-card .sc-inner{
+    display:flex;gap:10px;align-items:flex-start;
+    border:1.5px solid var(--line);border-radius:8px;padding:9px 11px;background:var(--white);cursor:pointer;
+  }
+  .score-card input:checked + .sc-inner{border-color:var(--rust);background:#FBF1E8;}
+  .score-card input:focus-visible + .sc-inner{outline:2px solid var(--forest-light);outline-offset:1px;}
+  .sc-num{
+    flex:0 0 auto;width:26px;height:26px;border-radius:6px;background:var(--parchment-deep);
+    display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;color:var(--forest-dark);
+  }
+  .score-card input:checked + .sc-inner .sc-num{background:var(--rust);color:var(--white);}
+  .sc-text{font-size:12.5px;line-height:1.4;}
+  .sc-text b{display:block;font-size:13px;margin-bottom:1px;}
+
+  /* risk badge - signature element: hex trail-blaze marker */
+  .risk-wrap{display:flex;align-items:center;gap:14px;margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);}
+  .blaze{
+    width:64px;height:64px;flex:0 0 auto;
+    clip-path:polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background:var(--ink-soft);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:var(--white);transition:background .2s ease;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,0.35);
+  }
+  .blaze .num{font-family:'Roboto Slab',serif;font-weight:900;font-size:22px;line-height:1;}
+  .blaze .of{font-size:8px;letter-spacing:0.5px;opacity:0.85;}
+  .blaze.low{background:var(--moss);}
+  .blaze.moderate{background:var(--amber);}
+  .blaze.high{background:var(--rust);}
+  .blaze.extreme{background:var(--deep-red);}
+  .risk-info b{display:block;font-size:14px;color:var(--forest-dark);font-family:'Roboto Slab',serif;}
+  .risk-info span{font-size:11.5px;color:var(--ink-soft);line-height:1.4;display:block;margin-top:2px;}
+
+  .bat-flag{
+    margin-top:10px;padding:9px 11px;border-radius:8px;font-size:12.5px;font-weight:600;
+    display:flex;align-items:center;gap:8px;
+  }
+  .bat-flag.yes{background:#F3E6E0;color:var(--rust);border:1px solid var(--rust);}
+  .bat-flag.no{background:var(--parchment-deep);color:var(--ink-soft);border:1px solid var(--line);}
+  .bat-flag.pending{background:var(--parchment-deep);color:var(--ink-soft);border:1px dashed var(--line);}
+
+  .toggle-row{display:flex;gap:8px;}
+  .toggle-btn{
+    flex:1;padding:9px;text-align:center;border-radius:8px;border:1.5px solid var(--line);
+    background:var(--white);font-size:13px;font-weight:600;cursor:pointer;color:var(--ink-soft);
+  }
+  .toggle-btn.active{background:var(--forest);border-color:var(--forest);color:var(--white);}
+
+  /* action bar */
+  .action-bar{
+    position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+    width:100%;max-width:760px;background:var(--white);
+    border-top:1px solid var(--line);padding:10px 14px;
+    display:flex;gap:10px;box-shadow:0 -4px 14px rgba(0,0,0,0.08);z-index:15;
+  }
+  .btn{
+    flex:1;padding:13px;border-radius:9px;border:none;font-weight:700;font-size:14.5px;
+    cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:0.2px;
+  }
+  .btn-primary{background:var(--forest);color:var(--white);}
+  .btn-primary:active{background:var(--forest-dark);}
+  .btn-secondary{background:var(--parchment-deep);color:var(--forest-dark);flex:0 0 auto;padding:13px 16px;}
+
+  /* table view */
+  .table-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+  .table-toolbar .count{font-size:12.5px;color:var(--ink-soft);flex:1;}
+  .tb-btn{
+    border:1.5px solid var(--forest);background:var(--white);color:var(--forest-dark);
+    padding:9px 13px;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;
+    display:flex;align-items:center;gap:6px;
+  }
+  .tb-btn.primary{background:var(--forest);color:var(--white);}
+  .tb-btn:disabled{opacity:.45;cursor:default;}
+
+  .entry-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    margin-bottom:10px;box-shadow:var(--shadow);overflow:hidden;
+  }
+  .entry-top{display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid var(--line);}
+  .entry-top .eid{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12.5px;color:var(--forest-dark);background:var(--parchment-deep);padding:2px 8px;border-radius:5px;}
+  .entry-top .esite{font-size:13.5px;font-weight:700;flex:1;font-family:'Roboto Slab',serif;color:var(--ink);}
+  .entry-badge{
+    width:34px;height:34px;flex:0 0 auto;
+    clip-path:polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display:flex;align-items:center;justify-content:center;color:var(--white);
+    font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;
+  }
+  .entry-badge.low{background:var(--moss);}
+  .entry-badge.moderate{background:var(--amber);}
+  .entry-badge.high{background:var(--rust);}
+  .entry-badge.extreme{background:var(--deep-red);}
+  .entry-badge.none{background:var(--ink-soft);}
+  .entry-grid{padding:11px 13px;display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;font-size:12.5px;}
+  .entry-grid div b{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:0.3px;color:var(--ink-soft);font-weight:600;margin-bottom:1px;}
+  .entry-grid div span{color:var(--ink);}
+  .entry-full{grid-column:1/-1;}
+  /* photo capture */
+  .photo-buttons{display:flex;gap:8px;margin-bottom:10px;}
+  .photo-btn{
+    flex:1;border:1.5px dashed var(--forest);background:var(--parchment-deep);color:var(--forest-dark);
+    border-radius:8px;padding:12px 8px;font-size:12.5px;font-weight:700;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:4px;font-family:'Inter',sans-serif;
+  }
+  .photo-btn .ic{font-size:18px;}
+  .photo-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px;}
+  .photo-thumb{
+    position:relative;width:74px;height:74px;border-radius:8px;overflow:hidden;
+    border:1.5px solid var(--line);background:var(--parchment-deep);flex:0 0 auto;cursor:pointer;
+  }
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .photo-thumb .rm{
+    position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;
+    background:rgba(20,20,15,0.72);color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .photo-count-hint{font-size:11.5px;color:var(--ink-soft);margin-bottom:12px;}
+  .lightbox{
+    position:fixed;inset:0;background:rgba(15,33,25,0.92);z-index:60;
+    display:none;align-items:center;justify-content:center;padding:24px;
+  }
+  .lightbox.show{display:flex;}
+  .lightbox img{max-width:100%;max-height:85vh;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.5);}
+  .lightbox-close{
+    position:absolute;top:16px;right:16px;width:38px;height:38px;border-radius:50%;
+    background:var(--white);border:none;font-size:18px;cursor:pointer;color:var(--forest-dark);
+  }
+  .entry-photo-strip{display:flex;gap:6px;padding:0 13px 11px;flex-wrap:wrap;}
+  .entry-photo-strip .ep-thumb{width:52px;height:52px;border-radius:6px;overflow:hidden;border:1px solid var(--line);cursor:pointer;flex:0 0 auto;}
+  .entry-photo-strip .ep-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .entry-actions{display:flex;gap:8px;padding:0 13px 12px;}
+  .entry-actions button{
+    flex:1;padding:8px;font-size:12px;font-weight:700;border-radius:7px;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .btn-edit{background:var(--parchment-deep);border:1px solid var(--line);color:var(--forest-dark);}
+  .btn-del{background:#F3E6E0;border:1px solid var(--rust);color:var(--rust);}
+  .bat-pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;margin-top:2px;}
+  .bat-pill.yes{background:#F3E6E0;color:var(--rust);}
+  .bat-pill.no{background:var(--parchment-deep);color:var(--ink-soft);}
+
+  .empty-state{text-align:center;padding:50px 20px;color:var(--ink-soft);}
+  .empty-state .em-icon{font-size:36px;margin-bottom:10px;}
+  .empty-state h3{color:var(--forest-dark);margin-bottom:6px;font-size:16px;}
+  .empty-state p{font-size:13px;line-height:1.5;max-width:320px;margin:0 auto;}
+
+  /* guide view */
+  .guide-section{margin-bottom:18px;}
+  .guide-section h3{font-size:13.5px;text-transform:uppercase;letter-spacing:0.4px;color:var(--forest-dark);margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--line);}
+  .code-row{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--parchment-deep);font-size:12.5px;align-items:flex-start;}
+  .code-row .code{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--rust);flex:0 0 58px;}
+  .code-row .desc{color:var(--ink);line-height:1.45;}
+  .code-row .desc b{display:block;color:var(--forest-dark);font-family:'Roboto Slab',serif;font-size:13px;margin-bottom:1px;}
+  .note-box{
+    background:var(--parchment-deep);border-left:3px solid var(--rust);padding:10px 12px;border-radius:0 8px 8px 0;
+    font-size:12px;line-height:1.5;color:var(--ink);margin-bottom:14px;
+  }
+
+  .toast{
+    position:fixed;bottom:78px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--forest-dark);color:var(--white);padding:11px 18px;border-radius:24px;
+    font-size:13px;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,0.25);
+    opacity:0;pointer-events:none;transition:all .25s ease;z-index:50;max-width:88%;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.warn{background:var(--rust);}
+
+  ::selection{background:var(--rust);color:var(--white);}
+  @media (min-width:600px){
+    .entry-grid{grid-template-columns:1fr 1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">A·T</div>
+      <div>
+        <h1>High-Risk Tree Assessment</h1>
+        <p>Appalachian National Scenic Trail — Field Data Collection</p>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-view="form">📋 Log a Tree</button>
+      <button class="tab" data-view="table">🗂️ Field Log <span class="badge" id="count-badge">0</span></button>
+      <button class="tab" data-view="guide">📖 Scoring Guide</button>
+    </div>
+  </div>
+
+  <div class="config-banner" id="config-banner">⚠ No shared backend configured — entries are only saved on this device. Set APPS_SCRIPT_URL in the CONFIG block near the top of the script to enable the shared field log.</div>
+
+  <main>
+
+    <!-- ============ FORM VIEW ============ -->
+    <section id="view-form" class="view active">
+      <form id="tree-form" novalidate>
+
+        <div class="card">
+          <div class="card-head"><div class="card-num">1</div><h2>Where &amp; When</h2></div>
+          <div class="card-body">
+            <div class="field">
+              <label class="flabel">Record ID</label>
+              <div class="row-id-btn">
+                <input type="text" id="f-recordId" class="mono" placeholder="AT-001">
+                <button type="button" class="btn-mini" id="btn-next-id">Next ID</button>
+              </div>
+              <div class="hint" id="edit-indicator" style="display:none;color:var(--rust);font-weight:600;">Editing existing record — saving will overwrite it.</div>
+            </div>
+            <div class="field">
+              <label class="flabel">Site Name <span class="req">*</span></label>
+              <input type="text" id="f-siteName" placeholder="e.g. Conndoguinnet Boardwalk" required>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label class="flabel">Date <span class="req">*</span></label>
+                <input type="date" id="f-date" required>
+              </div>
+              <div class="field">
+                <label class="flabel">Inspector(s) <span class="req">*</span></label>
+                <input type="text" id="f-inspector" placeholder="Initials or name" required>
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label class="flabel">Land Manager</label>
+                <select id="f-landManager"></select>
+              </div>
+              <div class="field">
+                <label class="flabel">State</label>
+                <select id="f-state"></select>
+              </div>
+            </div>
+            <div class="field">
+              <label class="flabel">Area of Congregation</label>
+              <select id="f-area"></select>
+              <div class="hint">Frequent-use areas (shelters, campsites, vistas, trailheads, bridges) score higher on target impact.</div>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label class="flabel">Latitude</label>
+                <input type="number" step="any" id="f-lat" placeholder="40.2684">
+              </div>
+              <div class="field">
+                <label class="flabel">Longitude</label>
+                <input type="number" step="any" id="f-lng" placeholder="-77.10261">
+              </div>
+            </div>
+            <button type="button" class="btn-mini" id="btn-geo" style="width:100%;padding:9px;">📍 Use My Current Location</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-num">2</div><h2>Tree Identification</h2></div>
+          <div class="card-body">
+            <div class="row2">
+              <div class="field">
+                <label class="flabel">Tree Tag #</label>
+                <input type="text" id="f-tag" placeholder="None">
+              </div>
+              <div class="field">
+                <label class="flabel">DBH — Diameter at Breast Height (in.) <span class="req">*</span></label>
+                <input type="number" step="0.1" min="0" id="f-dbh" placeholder="e.g. 22.5" required>
+              </div>
+            </div>
+            <div class="field">
+              <label class="flabel">Species <span class="req">*</span></label>
+              <select id="f-species" required></select>
+              <input type="text" id="f-species-other" placeholder="Specify species" style="display:none;margin-top:8px;">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-num">3</div><h2>Defect &amp; Risk Scoring</h2></div>
+          <div class="card-body">
+            <div class="field">
+              <label class="flabel">Defect(s) Observed <span class="req">*</span></label>
+              <div class="chip-grid" id="f-defects"></div>
+            </div>
+            <div class="field">
+              <label class="flabel">Probability of Failure <span class="req">*</span></label>
+              <div class="score-cards" id="f-pof"></div>
+            </div>
+            <div class="field">
+              <label class="flabel">Size of Defective Part <span class="req">*</span></label>
+              <div class="score-cards" id="f-size"></div>
+            </div>
+            <div class="field">
+              <label class="flabel">Probability of Target Impact <span class="req">*</span></label>
+              <div class="score-cards" id="f-impact"></div>
+            </div>
+
+            <div class="risk-wrap">
+              <div class="blaze" id="risk-blaze"><span class="num" id="risk-num">–</span><span class="of">of 12</span></div>
+              <div class="risk-info">
+                <b id="risk-label">Risk Rating — select all three scores</b>
+                <span>Sum of Probability of Failure + Size + Target Impact. A relative indicator only — final hazard calls are made by trained personnel.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-num">4</div><h2>Wildlife &amp; Bat Habitat</h2></div>
+          <div class="card-body">
+            <div class="field">
+              <label class="flabel">Wildlife / Bat Habitat Features Observed <span class="req">*</span></label>
+              <div class="chip-grid" id="f-habitat"></div>
+            </div>
+            <div class="bat-flag pending" id="bat-flag">Enter DBH and habitat features to auto-flag potential roost trees.</div>
+            <div class="hint">Suitable NLEB/bat roost trees are live trees or snags ≥ 3" DBH with cavities, cracks, or exfoliating/loose bark. Confirmed roost trees route to the Bat Habitat Compliance review before removal (safe removal window: Nov 1–Mar 31).</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-num">5</div><h2>Determination &amp; Documentation</h2></div>
+          <div class="card-body">
+            <div class="field">
+              <label class="flabel">Field Determination <span class="req">*</span></label>
+              <select id="f-determination" required></select>
+            </div>
+            <div class="field">
+              <label class="flabel">Photos Taken?</label>
+              <div class="toggle-row">
+                <button type="button" class="toggle-btn" data-photos="Yes">Yes</button>
+                <button type="button" class="toggle-btn active" data-photos="No">No</button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="flabel">Field Photos</label>
+              <div class="photo-buttons">
+                <button type="button" class="photo-btn" id="btn-take-photo"><span class="ic">📷</span>Take Photo</button>
+                <button type="button" class="photo-btn" id="btn-choose-photo"><span class="ic">🖼️</span>Choose from Library</button>
+              </div>
+              <input type="file" id="input-camera" accept="image/*" capture="environment" style="display:none;">
+              <input type="file" id="input-library" accept="image/*" multiple style="display:none;">
+              <div class="photo-thumbs" id="photo-thumbs"></div>
+              <div class="photo-count-hint" id="photo-hint">No photos attached yet. Photos are compressed and saved with the record.</div>
+            </div>
+            <div class="field">
+              <label class="flabel">Photo File(s) / Reference</label>
+              <input type="text" id="f-photoref" placeholder="e.g. IMG_0142, IMG_0143">
+              <div class="hint">Auto-filled from attached photos above — edit freely, e.g. to note photos taken on a separate camera.</div>
+            </div>
+            <div class="field">
+              <label class="flabel">Notes</label>
+              <textarea id="f-notes" placeholder="Location detail, additional observations..."></textarea>
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </section>
+
+    <!-- ============ TABLE VIEW ============ -->
+    <section id="view-table" class="view">
+      <div class="table-toolbar">
+        <span class="count" id="tbl-count">0 trees logged</span>
+        <button class="tb-btn" id="btn-refresh">↻ Refresh</button>
+        <button class="tb-btn primary" id="btn-export">⬇ Download CSV</button>
+      </div>
+      <div id="entries-container"></div>
+    </section>
+
+    <!-- ============ GUIDE VIEW ============ -->
+    <section id="view-guide" class="view">
+      <div class="note-box">Reference only, adapted from the APPA Codes &amp; Scoring Guide. Use it to score consistently in the field — it doesn't replace training or professional judgment.</div>
+
+      <div class="guide-section">
+        <h3>Probability of Failure (1–4 pts)</h3>
+        <div class="code-row"><div class="code">1 · Low</div><div class="desc">Minor branch/crown dieback; minor defects or wounds.</div></div>
+        <div class="code-row"><div class="code">2 · Mod.</div><div class="desc">Stem decay/cavity within safe shell limits (&gt;1 in. sound wood per 6 in. stem diameter); crack(s) without extensive decay; defect(s) affecting 30–40% of circumference; crown damage (hardwoods to 50%, pines to 30%); weak union with included bark; girdling roots &lt;40%; root damage &lt;40% within critical root radius (CRR).</div></div>
+        <div class="code-row"><div class="code">3 · High</div><div class="desc">Stem decay/cavity at or exceeding shell safety limits (&lt;1 in. sound wood per 6 in. diameter); cracks in contact with soil or other defects; defect(s) &gt;40% of circumference; crown damage (hardwoods &gt;50%, pines &gt;30%); weak union with crack/decay; girdling roots &gt;40%; root damage &gt;40% CRR; leaning tree with recent root breakage/soil mounding, crack, or extensive decay; standing dead tree, no other significant defects.</div></div>
+        <div class="code-row"><div class="code">4 · Ext. High</div><div class="desc">Stem decay/cavity exceeding shell limits with severe crack; stem/branch split in half; defect(s) &gt;40% with extensive decay or crack(s); weak union with crack and decay; leaning tree with recent root breakage and crack/decay; broken hanging dead branches or with a crack; standing dead tree with other defects; visual/physical obstruction of traffic.</div></div>
+      </div>
+
+      <div class="guide-section">
+        <h3>Size of Defective Part (1–3 pts)</h3>
+        <div class="code-row"><div class="code">1</div><div class="desc">Parts less than 4 inches in diameter.</div></div>
+        <div class="code-row"><div class="code">2</div><div class="desc">Parts 4 to 20 inches in diameter.</div></div>
+        <div class="code-row"><div class="code">3</div><div class="desc">Parts greater than 20 inches in diameter.</div></div>
+      </div>
+
+      <div class="guide-section">
+        <h3>Probability of Target Impact (1–3 pts, A.T. context)</h3>
+        <div class="code-row"><div class="code">1 · Occas.</div><div class="desc">Low-use side/relocation trails; boundary lines and non-congregation corridor segments; dispersed/undesignated areas with limited public use.</div></div>
+        <div class="code-row"><div class="code">2 · Interm.</div><div class="desc">Moderate-use campsites, vistas, or trail segments; secondary access roads and parking adjacent to moderate-use sites.</div></div>
+        <div class="code-row"><div class="code">3 · Frequent</div><div class="desc">Shelters, designated overnight sites, privies, trailheads, bridges, high-use vistas, parking adjacent to high-use sites, and any area of congregation per ATC guidance.</div></div>
+      </div>
+
+      <div class="guide-section">
+        <h3>Defect Codes (USDA Community Tree Risk Evaluation Form)</h3>
+        <div class="code-row"><div class="code">D</div><div class="desc">Decay</div></div>
+        <div class="code-row"><div class="code">CR</div><div class="desc">Crack</div></div>
+        <div class="code-row"><div class="code">Root</div><div class="desc">Root problems (general)</div></div>
+        <div class="code-row"><div class="code">WBU</div><div class="desc">Weak branch union</div></div>
+        <div class="code-row"><div class="code">CA</div><div class="desc">Canker</div></div>
+        <div class="code-row"><div class="code">PTA:LT</div><div class="desc">Leaning tree</div></div>
+        <div class="code-row"><div class="code">PTA:TT</div><div class="desc">Topped tree</div></div>
+        <div class="code-row"><div class="code">EE</div><div class="desc">Excessive epicormics</div></div>
+        <div class="code-row"><div class="code">DEAD</div><div class="desc">Dead tree, top, or branches</div></div>
+        <div class="code-row"><div class="code">VO</div><div class="desc">Visible obstruction (signs/lights/intersections)</div></div>
+        <div class="code-row"><div class="code">PO</div><div class="desc">Physical obstruction (pedestrian/vehicular traffic)</div></div>
+        <div class="hint">The full USDA code set (including root-specific codes RSG, RS, RPD, RGC, RSB) is reserved for detailed office review. Note specifics in Notes as needed.</div>
+      </div>
+
+      <div class="guide-section">
+        <h3>ATC Hazard Tree Decision Workflow</h3>
+        <div class="code-row"><div class="code">Step 1</div><div class="desc">Trained personnel complete assessment (every 5 yrs, or after storms, reports, or forest health changes).</div></div>
+        <div class="code-row"><div class="code">Step 2</div><div class="desc">No hazard → monitoring. Defect confirmed but below threshold → monitor at a frequency matched to severity. Hazard confirmed (imminent risk to a congregation area/structure) → recommend management action.</div></div>
+        <div class="code-row"><div class="code">Step 3</div><div class="desc">Land manager reviews: declines (may recommend closure/further assessment) or approves removal.</div></div>
+        <div class="code-row"><div class="code">Step 4–6</div><div class="desc">If removal can't happen immediately, land manager may direct site quarantine: flagging, signage, trailhead notices, online updates.</div></div>
+        <div class="code-row"><div class="code">Step 7–9</div><div class="desc">Qualified personnel remove the tree per team requirements; reopen site if closed; resume monitoring.</div></div>
+      </div>
+
+      <div class="guide-section">
+        <h3>Removal Team Requirements</h3>
+        <div class="code-row"><div class="code">Team</div><div class="desc">Minimum of two people per removal.</div></div>
+        <div class="code-row"><div class="code">First aid</div><div class="desc">At least two team members trained in first aid.</div></div>
+        <div class="code-row"><div class="code">Sawyer</div><div class="desc">At least one B- or C-Feller-certified sawyer required; sawyers don't exceed their comfort/certification level.</div></div>
+        <div class="code-row"><div class="code">Rigging</div><div class="desc">If rigging is required, at least one member trained in tree risk assessment and arborist rigging must be present.</div></div>
+      </div>
+
+      <div class="guide-section">
+        <h3>Bat Conservation Parameters (APPA Programmatic BA)</h3>
+        <div class="code-row"><div class="code">Threshold</div><div class="desc">Suitable NLEB/bat roost trees: live trees and snags ≥ 3" DBH with cavities, cracks, or exfoliating/loose bark.</div></div>
+        <div class="code-row"><div class="code">Safe window</div><div class="desc">Nov 1 – Mar 31 (bat inactive season). Removal outside this window requires deferral or the imminent hazard exception.</div></div>
+        <div class="code-row"><div class="code">Inspection</div><div class="desc">A roost inspection must be completed within 72 hrs prior to removal for any suitable roost tree removed outside the safe window.</div></div>
+        <div class="code-row"><div class="code">Exception</div><div class="desc">A suitable roost tree posing an imminent hazard may be removed outside the window without waiting, if documented and, where applicable, USFWS/resource staff are consulted.</div></div>
+      </div>
+
+      <div class="guide-section" style="margin-bottom:0;">
+        <h3>Sources</h3>
+        <div class="code-row"><div class="code">ATC</div><div class="desc">Guidance on Appalachian Trail Hazardous Trees, Final, April 2026.</div></div>
+        <div class="code-row"><div class="code">USDA FS</div><div class="desc">Urban Tree Risk Management: A Community Guide to Program Design and Implementation (NA-TP-03-03, 2006).</div></div>
+        <div class="code-row"><div class="code">APPA</div><div class="desc">Programmatic Biological Assessment, bat conservation measures.</div></div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="action-bar" id="form-action-bar">
+    <button type="button" class="btn btn-secondary" id="btn-reset">Clear</button>
+    <button type="button" class="btn btn-primary" id="btn-save">Save Tree to Log</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" id="lightbox-close">✕</button>
+    <img id="lightbox-img" src="" alt="Field photo">
+  </div>
+</div>
+
+<script>
+(function(){
+
+  /* ---------------- Reference data (from Lists tab) ---------------- */
+  const LAND_MANAGERS = ["APPA","USFS","STATE","GRSM","DEWA","SHEN","CHOH","OTHER"];
+  const STATES = ["GA","NC","TN","VA","WV","MD","PA","NJ","NY","CT","MA","VT","NH","ME"];
+  const AREAS = ["Shelter","Campsite (designated)","Privy","Vista","Trailhead","Bridge","Parking Area","Boundary (non-congregation)","Other"];
+  const SPECIES = ["White Ash (Fraxinus americana)","Green Ash (Fraxinus pennsylvanica)","Black Ash (Fraxinus nigra)","Eastern Hemlock (Tsuga canadensis)","American Beech (Fagus grandifolia)","Silver Maple (Acer saccharinum)","Box Elder (Acer negundo)","Black Locust (Robinia pseudoacacia)","Eastern Cottonwood (Populus deltoides)","Butternut (Juglans cinerea)","American Elm (Ulmus americana)","Slippery Elm (Ulmus rubra)","Black Cherry (Prunus serotina)","Willow Oak (Quercus phellos)","Pin Oak (Quercus palustris)","Red Oak (Quercus rubra)","White Oak (Quercus alba)","Chestnut Oak (Quercus montana)","Black Oak (Quercus velutina)","Scarlet Oak (Quercus coccinea)","Post Oak (Quercus stellata)","Red Maple (Acer rubrum)","Sugar Maple (Acer saccharum)","Striped Maple (Acer pensylvanicum)","Eastern White Pine (Pinus strobus)","Virginia Pine (Pinus virginiana)","Loblolly Pine (Pinus taeda)","Pitch Pine (Pinus rigida)","Shortleaf Pine (Pinus echinata)","Tulip Poplar (Liriodendron tulipifera)","American Sycamore (Platanus occidentalis)","Shagbark Hickory (Carya ovata)","Pignut Hickory (Carya glabra)","Mockernut Hickory (Carya tomentosa)","Bitternut Hickory (Carya cordiformis)","Sweetgum (Liquidambar styraciflua)","Sourwood (Oxydendrum arboreum)","American Basswood (Tilia americana)","Eastern Redcedar (Juniperus virginiana)","Balsam Fir (Abies balsamea)","Fraser Fir (Abies fraseri)","Red Spruce (Picea rubens)","Yellow Birch (Betula alleghaniensis)","Paper Birch (Betula papyrifera)","Sweet Birch (Betula lenta)","Sassafras (Sassafras albidum)","Black Walnut (Juglans nigra)","Black Gum (Nyssa sylvatica)","Eastern Hophornbeam (Ostrya virginiana)","Flowering Dogwood (Cornus florida)","Other (List in Notes)"];
+  const DEFECTS = [
+    ["D","Decay"],["CR","Crack"],["Root","Root problems"],["WBU","Weak branch union"],["CA","Canker"],
+    ["PTA:LT","Leaning tree"],["PTA:TT","Topped tree"],["EE","Excessive epicormics"],["DEAD","Dead tree/top/branches"],
+    ["VO","Visible obstruction"],["PO","Physical obstruction"],["Pest/Pathogen","Pest/Pathogen (specify in notes)"],["Multiple","Multiple (specify in notes)"]
+  ];
+  const POF = [
+    ["1 - Low","Minor branch/crown dieback; minor defects or wounds."],
+    ["2 - Moderate","Decay/cracks within safe limits; defects on 30–40% of circumference; moderate crown damage."],
+    ["3 - High","Decay/cracks at or exceeding safety limits; defects on >40% of circumference; leaning w/ root breakage."],
+    ["4 - Extremely High","Severe crack/split; extensive decay >40% w/ crack; standing dead w/ other defects; visitor obstruction."]
+  ];
+  const SIZE = [
+    ["1 - <4 in. diameter","Parts less than 4 inches in diameter."],
+    ["2 - 4-20 in. diameter","Parts from 4 to 20 inches in diameter."],
+    ["3 - >20 in. diameter","Parts greater than 20 inches in diameter."]
+  ];
+  const IMPACT = [
+    ["1 - Occasional Use","Low-use side/relocation trails; boundary lines; dispersed areas."],
+    ["2 - Intermediate Use","Moderate-use campsites, vistas, trail segments; secondary access roads."],
+    ["3 - Frequent Use","Shelters, overnight sites, privies, trailheads, bridges, high-use vistas — any area of congregation."]
+  ];
+  const HABITAT = ["None Observed","Exfoliating/Peeling Bark","Snags","Cavities","Cracks/Crevices","Split Trunk or Broken Top","Hollow Section(s)","Multiple Features (specify in notes)","Other Wildlife Sign (nest/den/scat)"];
+  const DETERMINATIONS = ["No Hazard - Monitor Not Needed","Defect Confirmed - Monitor","Hazard Confirmed - Recommend Removal"];
+
+  const CSV_COLUMNS = ["Record ID","Site Name","Date","Inspector(s)","Land Manager","State","Latitude","Longitude","Area of Congregation","Tree Tag #","Species","DBH (in.)","Defect(s) Observed","Probability of Failure","Size of Defective Part","Probability of Target Impact","Risk Rating","Wildlife/Bat Habitat Features Observed","Potential Bat Roost Tree?","Field Determination","Photos Taken?","Photo File(s)/Reference","Notes"];
+
+  /* ---------------- State ---------------- */
+  /* ================= CONFIGURE THIS ================= */
+  // Paste your Apps Script Web app URL and the SHARED_TOKEN you set in Code.gs.
+  // Leave APPS_SCRIPT_URL blank to run in local-only preview mode (each browser keeps its own data).
+  const CONFIG = {
+    APPS_SCRIPT_URL: "",     // e.g. "https://script.google.com/macros/s/AKfycbzvdE79c2mQrZE8J7N9T_HzOPHvKU43AuH55yMISKULFaF-c7pR4215g2R9PAw3_B9B/exec
+"
+    SHARED_TOKEN: "APPA-HR-TREE-ASSESSMENT333"
+  };
+  /* ==================================================== */
+
+  const BACKEND_CONFIGURED = !!CONFIG.APPS_SCRIPT_URL;
+  const LOCAL_KEY = "appa_tree_entries_v1";
+
+  let entries = {};      // recordId -> entry object
+  let editingId = null;
+  let photosTaken = "No";
+  let storageAvailable = true;
+  let currentPhotos = []; // [{name, dataUrl}] for the form currently being edited
+
+  /* ---------------- Photo capture ---------------- */
+  const MAX_PHOTO_DIM = 1280;
+  const JPEG_QUALITY = 0.6;
+  const MAX_TOTAL_PHOTO_BYTES = 4.2 * 1024 * 1024; // keep entry well under the 5MB storage value limit
+
+  function compressImage(file){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Could not read file"));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Could not decode image"));
+        img.onload = () => {
+          let w = img.width, h = img.height;
+          if(w > MAX_PHOTO_DIM || h > MAX_PHOTO_DIM){
+            const scale = MAX_PHOTO_DIM / Math.max(w,h);
+            w = Math.round(w*scale); h = Math.round(h*scale);
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+          resolve(dataUrl);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function currentPhotoBytes(){
+    return currentPhotos.reduce((sum,p)=> sum + (p.dataUrl ? Math.round(p.dataUrl.length*0.75) : 0), 0);
+  }
+
+  async function handlePhotoFiles(fileList){
+    const files = [...fileList].filter(f=> f.type.startsWith("image/"));
+    if(files.length===0) return;
+    showToast(files.length>1 ? `Processing ${files.length} photos…` : "Processing photo…");
+    for(const file of files){
+      try{
+        const dataUrl = await compressImage(file);
+        const approxBytes = Math.round(dataUrl.length*0.75);
+        if(currentPhotoBytes() + approxBytes > MAX_TOTAL_PHOTO_BYTES){
+          showToast("Photo skipped — record is at the size limit for this entry. Remove a photo or export separately.", true);
+          continue;
+        }
+        const name = `${(document.getElementById("f-recordId").value||"tree").trim()}_${currentPhotos.length+1}.jpg`;
+        currentPhotos.push({name, dataUrl});
+      }catch(err){
+        showToast("Couldn't process a photo — try again.", true);
+      }
+    }
+    renderPhotoThumbs();
+    syncPhotoRefField();
+  }
+
+  function syncPhotoRefField(){
+    const refField = document.getElementById("f-photoref");
+    const autoNames = currentPhotos.map(p=>p.name).join(", ");
+    if(currentPhotos.length>0){
+      refField.value = autoNames;
+      photosTaken = "Yes";
+      document.querySelectorAll("[data-photos]").forEach(b=>b.classList.toggle("active", b.dataset.photos==="Yes"));
+    }
+  }
+
+  function renderPhotoThumbs(){
+    const wrap = document.getElementById("photo-thumbs");
+    const hint = document.getElementById("photo-hint");
+    wrap.innerHTML = currentPhotos.map((p,i)=>`
+      <div class="photo-thumb" data-view="${i}">
+        <img src="${p.url || p.dataUrl}" alt="${escapeAttr(p.name)}">
+        <button type="button" class="rm" data-remove="${i}" aria-label="Remove photo">✕</button>
+      </div>`).join("");
+    if(currentPhotos.length===0){
+      hint.textContent = "No photos attached yet. Photos are compressed and saved with the record.";
+    } else {
+      const kb = Math.round(currentPhotoBytes()/1024);
+      hint.textContent = `${currentPhotos.length} photo${currentPhotos.length===1?"":"s"} attached (~${kb} KB).`;
+    }
+    wrap.querySelectorAll("[data-remove]").forEach(btn=>{
+      btn.addEventListener("click", e=>{
+        e.stopPropagation();
+        currentPhotos.splice(parseInt(btn.dataset.remove),1);
+        renderPhotoThumbs();
+        syncPhotoRefField();
+      });
+    });
+    wrap.querySelectorAll(".photo-thumb").forEach(el=>{
+      el.addEventListener("click", ()=> {
+        const p = currentPhotos[parseInt(el.dataset.view)];
+        openLightbox(p.url || p.dataUrl);
+      });
+    });
+  }
+
+  function openLightbox(src){
+    document.getElementById("lightbox-img").src = src;
+    document.getElementById("lightbox").classList.add("show");
+  }
+  function closeLightbox(){
+    document.getElementById("lightbox").classList.remove("show");
+    document.getElementById("lightbox-img").src = "";
+  }
+  document.getElementById("lightbox-close").addEventListener("click", closeLightbox);
+  document.getElementById("lightbox").addEventListener("click", e=>{
+    if(e.target.id==="lightbox") closeLightbox();
+  });
+
+  document.getElementById("btn-take-photo").addEventListener("click", ()=> document.getElementById("input-camera").click());
+  document.getElementById("btn-choose-photo").addEventListener("click", ()=> document.getElementById("input-library").click());
+  document.getElementById("input-camera").addEventListener("change", e=>{ handlePhotoFiles(e.target.files); e.target.value=""; });
+  document.getElementById("input-library").addEventListener("change", e=>{ handlePhotoFiles(e.target.files); e.target.value=""; });
+
+  /* ---------------- Populate static form controls ---------------- */
+  function fillSelect(el, opts, placeholder){
+    el.innerHTML = "";
+    if(placeholder){
+      const o = document.createElement("option");
+      o.value = ""; o.textContent = placeholder;
+      el.appendChild(o);
+    }
+    opts.forEach(v=>{
+      const o = document.createElement("option");
+      o.value = v; o.textContent = v;
+      el.appendChild(o);
+    });
+  }
+  fillSelect(document.getElementById("f-landManager"), LAND_MANAGERS, "Select...");
+  fillSelect(document.getElementById("f-state"), STATES, "Select...");
+  fillSelect(document.getElementById("f-area"), AREAS, "Select...");
+  fillSelect(document.getElementById("f-species"), SPECIES, "Select species...");
+  fillSelect(document.getElementById("f-determination"), DETERMINATIONS, "Select...");
+
+  document.getElementById("f-species").addEventListener("change", e=>{
+    const other = document.getElementById("f-species-other");
+    other.style.display = e.target.value.startsWith("Other") ? "block" : "none";
+  });
+
+  function buildChips(container, options, name){
+    container.innerHTML = "";
+    options.forEach((opt,i)=>{
+      const id = name+"-"+i;
+      const wrap = document.createElement("label");
+      wrap.className = "chip";
+      wrap.innerHTML = `<input type="checkbox" id="${id}" value="${opt}" name="${name}"><span>${opt}</span>`;
+      container.appendChild(wrap);
+    });
+  }
+  buildChips(document.getElementById("f-defects"), DEFECTS.map(d=>d[1]), "defect");
+  buildChips(document.getElementById("f-habitat"), HABITAT, "habitat");
+
+  // habitat "None Observed" exclusivity
+  document.getElementById("f-habitat").addEventListener("change", e=>{
+    if(e.target.name !== "habitat") return;
+    const boxes = [...document.querySelectorAll('input[name="habitat"]')];
+    if(e.target.value === "None Observed" && e.target.checked){
+      boxes.forEach(b=>{ if(b.value!=="None Observed") b.checked=false; });
+    } else if(e.target.checked){
+      boxes.forEach(b=>{ if(b.value==="None Observed") b.checked=false; });
+    }
+    updateBatFlag();
+  });
+
+  function buildScoreCards(container, options, name){
+    container.innerHTML = "";
+    options.forEach((opt,i)=>{
+      const [label, desc] = opt;
+      const num = label[0];
+      const title = label.split(" - ")[1] || label;
+      const id = name+"-"+i;
+      const wrap = document.createElement("label");
+      wrap.className = "score-card";
+      wrap.innerHTML = `<input type="radio" id="${id}" value="${label}" name="${name}">
+        <div class="sc-inner"><div class="sc-num">${num}</div><div class="sc-text"><b>${title}</b>${desc}</div></div>`;
+      container.appendChild(wrap);
+    });
+  }
+  buildScoreCards(document.getElementById("f-pof"), POF, "pof");
+  buildScoreCards(document.getElementById("f-size"), SIZE, "size");
+  buildScoreCards(document.getElementById("f-impact"), IMPACT, "impact");
+
+  document.getElementById("tree-form").addEventListener("change", e=>{
+    if(["pof","size","impact"].includes(e.target.name)) updateRisk();
+  });
+  document.getElementById("f-dbh").addEventListener("input", updateBatFlag);
+
+  /* ---------------- Risk / Bat calculations ---------------- */
+  function bandFor(total){
+    if(total===null) return {cls:"", label:""};
+    if(total<=5) return {cls:"low", label:"Low"};
+    if(total<=8) return {cls:"moderate", label:"Moderate"};
+    if(total<=10) return {cls:"high", label:"High"};
+    return {cls:"extreme", label:"Extremely High"};
+  }
+  function getSelected(name){
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : "";
+  }
+  function updateRisk(){
+    const pof = getSelected("pof"), size = getSelected("size"), impact = getSelected("impact");
+    const blaze = document.getElementById("risk-blaze");
+    const num = document.getElementById("risk-num");
+    const label = document.getElementById("risk-label");
+    if(!pof || !size || !impact){
+      blaze.className = "blaze";
+      num.textContent = "–";
+      label.textContent = "Risk Rating — select all three scores";
+      return null;
+    }
+    const total = parseInt(pof[0]) + parseInt(size[0]) + parseInt(impact[0]);
+    const band = bandFor(total);
+    blaze.className = "blaze " + band.cls;
+    num.textContent = total;
+    label.textContent = `Risk Rating: ${total} of 12 — ${band.label}`;
+    return total;
+  }
+  function updateBatFlag(){
+    const dbh = parseFloat(document.getElementById("f-dbh").value);
+    const habitats = [...document.querySelectorAll('input[name="habitat"]:checked')].map(b=>b.value);
+    const flagEl = document.getElementById("bat-flag");
+    if(isNaN(dbh) || habitats.length===0){
+      flagEl.className = "bat-flag pending";
+      flagEl.textContent = "Enter DBH and habitat features to auto-flag potential roost trees.";
+      return "";
+    }
+    const hasFeature = !(habitats.length===1 && habitats[0]==="None Observed");
+    if(dbh>=3 && hasFeature){
+      flagEl.className = "bat-flag yes";
+      flagEl.textContent = "⚠ Potential Bat Roost Tree — route to Bat Habitat Compliance review before removal.";
+      return "Yes - see Bat Habitat Compliance review";
+    } else {
+      flagEl.className = "bat-flag no";
+      flagEl.textContent = "Not flagged as a potential bat roost tree.";
+      return "No";
+    }
+  }
+
+  /* photos toggle */
+  document.querySelectorAll("[data-photos]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      photosTaken = btn.dataset.photos;
+      document.querySelectorAll("[data-photos]").forEach(b=>b.classList.toggle("active", b===btn));
+    });
+  });
+
+  /* geolocation */
+  document.getElementById("btn-geo").addEventListener("click", ()=>{
+    if(!navigator.geolocation){ showToast("Geolocation not available on this device.", true); return; }
+    showToast("Getting location…");
+    navigator.geolocation.getCurrentPosition(pos=>{
+      document.getElementById("f-lat").value = pos.coords.latitude.toFixed(5);
+      document.getElementById("f-lng").value = pos.coords.longitude.toFixed(5);
+      showToast("Location captured.");
+    }, err=>{
+      showToast("Couldn't get location: " + err.message, true);
+    }, {enableHighAccuracy:true, timeout:10000});
+  });
+
+  /* ---------------- Tabs ---------------- */
+  document.querySelectorAll(".tab").forEach(tab=>{
+    tab.addEventListener("click", ()=>{
+      document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+      document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById("view-"+tab.dataset.view).classList.add("active");
+      document.getElementById("form-action-bar").style.display = tab.dataset.view==="form" ? "flex" : "none";
+      if(tab.dataset.view==="table") renderTable();
+    });
+  });
+
+  /* ---------------- Next Record ID ---------------- */
+  function suggestNextId(){
+    let max = 0;
+    Object.keys(entries).forEach(id=>{
+      const m = /AT-(\d+)/.exec(id);
+      if(m) max = Math.max(max, parseInt(m[1]));
+    });
+    return "AT-" + String(max+1).padStart(3,"0");
+  }
+  document.getElementById("btn-next-id").addEventListener("click", ()=>{
+    document.getElementById("f-recordId").value = suggestNextId();
+  });
+
+  /* ---------------- Save / Reset / Edit ---------------- */
+  function resetForm(clearId){
+    document.getElementById("tree-form").reset();
+    document.getElementById("f-date").value = new Date().toISOString().slice(0,10);
+    document.getElementById("f-species-other").style.display = "none";
+    photosTaken = "No";
+    document.querySelectorAll("[data-photos]").forEach(b=>b.classList.toggle("active", b.dataset.photos==="No"));
+    currentPhotos = [];
+    renderPhotoThumbs();
+    updateRisk();
+    updateBatFlag();
+    editingId = null;
+    document.getElementById("edit-indicator").style.display = "none";
+    document.getElementById("btn-save").textContent = "Save Tree to Log";
+    if(clearId!==false) document.getElementById("f-recordId").value = suggestNextId();
+  }
+
+  function collectForm(){
+    const recordId = document.getElementById("f-recordId").value.trim();
+    const siteName = document.getElementById("f-siteName").value.trim();
+    const date = document.getElementById("f-date").value;
+    const inspector = document.getElementById("f-inspector").value.trim();
+    const dbh = document.getElementById("f-dbh").value;
+    let species = document.getElementById("f-species").value;
+    if(species.startsWith("Other")){
+      const custom = document.getElementById("f-species-other").value.trim();
+      if(custom) species = custom + " (Other)";
+    }
+    const defects = [...document.querySelectorAll('input[name="defect"]:checked')].map(b=>b.value);
+    const pof = getSelected("pof"), size = getSelected("size"), impact = getSelected("impact");
+    const habitats = [...document.querySelectorAll('input[name="habitat"]:checked')].map(b=>b.value);
+    const determination = document.getElementById("f-determination").value;
+
+    const errors = [];
+    if(!recordId) errors.push("Record ID");
+    if(!siteName) errors.push("Site Name");
+    if(!date) errors.push("Date");
+    if(!inspector) errors.push("Inspector(s)");
+    if(!dbh) errors.push("DBH");
+    if(!species) errors.push("Species");
+    if(defects.length===0) errors.push("Defect(s) Observed");
+    if(!pof) errors.push("Probability of Failure");
+    if(!size) errors.push("Size of Defective Part");
+    if(!impact) errors.push("Probability of Target Impact");
+    if(habitats.length===0) errors.push("Wildlife/Bat Habitat Features");
+    if(!determination) errors.push("Field Determination");
+
+    if(errors.length){
+      showToast("Missing required: " + errors.slice(0,3).join(", ") + (errors.length>3 ? "…" : ""), true);
+      return null;
+    }
+
+    const riskRating = parseInt(pof[0]) + parseInt(size[0]) + parseInt(impact[0]);
+    const batRoost = updateBatFlag();
+
+    return {
+      recordId, siteName, date, inspector,
+      landManager: document.getElementById("f-landManager").value,
+      state: document.getElementById("f-state").value,
+      lat: document.getElementById("f-lat").value,
+      lng: document.getElementById("f-lng").value,
+      area: document.getElementById("f-area").value,
+      tag: document.getElementById("f-tag").value.trim() || "None",
+      species, dbh,
+      defects: defects.join("; "),
+      pof, size, impact,
+      riskRating,
+      habitats: habitats.join("; "),
+      batRoost,
+      determination,
+      photosTaken,
+      photoRef: document.getElementById("f-photoref").value.trim(),
+      photos: currentPhotos.slice(),
+      notes: document.getElementById("f-notes").value.trim(),
+      savedAt: new Date().toISOString()
+    };
+  }
+
+  async function saveEntry(){
+    const entry = collectForm();
+    if(!entry) return;
+    entries[entry.recordId] = entry;
+    updateCountBadge();
+    document.getElementById("btn-save").disabled = true;
+    try{
+      if(BACKEND_CONFIGURED){
+        const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify({ action:"save", token: CONFIG.SHARED_TOKEN, entry })
+        });
+        const data = await res.json();
+        if(!data.ok) throw new Error(data.error || "save failed");
+        // backend returns Drive URLs for any uploaded photos — swap those in so we're not
+        // holding large base64 strings in memory/local storage going forward.
+        if(data.photos){ entries[entry.recordId].photos = data.photos; }
+        showToast(`Saved ${entry.recordId} — shared with the field log.`);
+      } else {
+        saveLocal();
+        showToast(`Saved ${entry.recordId} locally (no backend configured — see CONFIG at top of the script).`, true);
+      }
+    } catch(err){
+      storageAvailable = false;
+      saveLocal();
+      showToast(`Saved ${entry.recordId} on this device only — couldn't reach the shared log.`, true);
+    }
+    document.getElementById("btn-save").disabled = false;
+    resetForm(true);
+  }
+  document.getElementById("btn-save").addEventListener("click", saveEntry);
+  document.getElementById("btn-reset").addEventListener("click", ()=>resetForm(true));
+
+  function loadIntoForm(entry){
+    document.getElementById("f-recordId").value = entry.recordId;
+    document.getElementById("f-siteName").value = entry.siteName;
+    document.getElementById("f-date").value = entry.date;
+    document.getElementById("f-inspector").value = entry.inspector;
+    document.getElementById("f-landManager").value = entry.landManager || "";
+    document.getElementById("f-state").value = entry.state || "";
+    document.getElementById("f-lat").value = entry.lat || "";
+    document.getElementById("f-lng").value = entry.lng || "";
+    document.getElementById("f-area").value = entry.area || "";
+    document.getElementById("f-tag").value = entry.tag==="None" ? "" : entry.tag;
+    document.getElementById("f-dbh").value = entry.dbh;
+    const speciesSel = document.getElementById("f-species");
+    if(SPECIES.includes(entry.species)){
+      speciesSel.value = entry.species;
+    } else {
+      speciesSel.value = "Other (List in Notes)";
+      document.getElementById("f-species-other").style.display = "block";
+      document.getElementById("f-species-other").value = entry.species.replace(" (Other)","");
+    }
+    (entry.defects||"").split("; ").filter(Boolean).forEach(v=>{
+      const box = document.querySelector(`input[name="defect"][value="${CSS.escape(v)}"]`);
+      if(box) box.checked = true;
+    });
+    if(entry.pof) document.querySelector(`input[name="pof"][value="${CSS.escape(entry.pof)}"]`).checked = true;
+    if(entry.size) document.querySelector(`input[name="size"][value="${CSS.escape(entry.size)}"]`).checked = true;
+    if(entry.impact) document.querySelector(`input[name="impact"][value="${CSS.escape(entry.impact)}"]`).checked = true;
+    (entry.habitats||"").split("; ").filter(Boolean).forEach(v=>{
+      const box = document.querySelector(`input[name="habitat"][value="${CSS.escape(v)}"]`);
+      if(box) box.checked = true;
+    });
+    document.getElementById("f-determination").value = entry.determination || "";
+    photosTaken = entry.photosTaken || "No";
+    document.querySelectorAll("[data-photos]").forEach(b=>b.classList.toggle("active", b.dataset.photos===photosTaken));
+    document.getElementById("f-photoref").value = entry.photoRef || "";
+    currentPhotos = (entry.photos || []).slice();
+    renderPhotoThumbs();
+    document.getElementById("f-notes").value = entry.notes || "";
+    updateRisk();
+    updateBatFlag();
+    editingId = entry.recordId;
+    document.getElementById("edit-indicator").style.display = "block";
+    document.getElementById("btn-save").textContent = "Update Tree in Log";
+  }
+
+  async function deleteEntry(recordId){
+    if(!confirm(`Delete record ${recordId}? This can't be undone.`)) return;
+    delete entries[recordId];
+    renderTable();
+    updateCountBadge();
+    try{
+      if(BACKEND_CONFIGURED){
+        const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify({ action:"delete", token: CONFIG.SHARED_TOKEN, recordId })
+        });
+        const data = await res.json();
+        if(!data.ok) throw new Error(data.error || "delete failed");
+      } else {
+        saveLocal();
+      }
+      showToast(`Deleted ${recordId}.`);
+    }catch(err){
+      saveLocal();
+      showToast(`Deleted ${recordId} on this device. Couldn't reach the shared log to delete it there too.`, true);
+    }
+  }
+
+  /* ---------------- Local-only fallback (used when no backend is configured, or offline) ---------------- */
+  function saveLocal(){
+    try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(entries)); }catch(e){ /* storage full or unavailable */ }
+  }
+  function loadLocal(){
+    try{
+      const raw = localStorage.getItem(LOCAL_KEY);
+      if(raw) entries = JSON.parse(raw);
+    }catch(e){ /* ignore */ }
+  }
+
+  /* ---------------- Load from backend (or local fallback) ---------------- */
+  async function loadEntries(){
+    if(!BACKEND_CONFIGURED){
+      storageAvailable = false;
+      loadLocal();
+      updateCountBadge();
+      renderTable();
+      document.getElementById("f-recordId").value = suggestNextId();
+      return;
+    }
+    try{
+      const res = await fetch(CONFIG.APPS_SCRIPT_URL, { method:"GET" });
+      const data = await res.json();
+      if(!data.ok) throw new Error(data.error || "load failed");
+      entries = {};
+      (data.entries||[]).forEach(e=>{ entries[e.recordId] = e; });
+      updateCountBadge();
+      renderTable();
+      document.getElementById("f-recordId").value = suggestNextId();
+    }catch(err){
+      storageAvailable = false;
+      loadLocal();
+      updateCountBadge();
+      renderTable();
+      document.getElementById("f-recordId").value = suggestNextId();
+      showToast("Could not reach the shared field log — showing this device's local data instead.", true);
+    }
+  }
+
+  document.getElementById("btn-refresh").addEventListener("click", async ()=>{
+    entries = {};
+    document.getElementById("entries-container").innerHTML = `<div class="empty-state"><div class="em-icon">↻</div><p>Refreshing…</p></div>`;
+    await loadEntries();
+    showToast("Field log refreshed.");
+  });
+
+  /* ---------------- Render table ---------------- */
+  function updateCountBadge(){
+    const n = Object.keys(entries).length;
+    document.getElementById("count-badge").textContent = n;
+    document.getElementById("tbl-count").textContent = n===1 ? "1 tree logged" : n + " trees logged";
+    document.getElementById("btn-export").disabled = n===0;
+  }
+
+  function renderTable(){
+    const container = document.getElementById("entries-container");
+    const list = Object.values(entries).sort((a,b)=> a.recordId.localeCompare(b.recordId, undefined, {numeric:true}));
+    if(list.length===0){
+      container.innerHTML = `<div class="empty-state"><div class="em-icon">🌲</div><h3>No trees logged yet</h3><p>Entries you save from the Log a Tree tab will appear here, shared across everyone using this field log.</p></div>`;
+      return;
+    }
+    container.innerHTML = list.map(e=>{
+      const band = bandFor(e.riskRating);
+      const batYes = (e.batRoost||"").startsWith("Yes");
+      return `
+      <div class="entry-card">
+        <div class="entry-top">
+          <span class="eid">${escapeHtml(e.recordId)}</span>
+          <span class="esite">${escapeHtml(e.siteName)}</span>
+          <div class="entry-badge ${band.cls||'none'}">${e.riskRating ?? '–'}</div>
+        </div>
+        <div class="entry-grid">
+          <div><b>Date</b><span>${escapeHtml(e.date||'—')}</span></div>
+          <div><b>Species</b><span>${escapeHtml(e.species||'—')}</span></div>
+          <div><b>DBH</b><span>${escapeHtml(String(e.dbh||'—'))} in.</span></div>
+          <div><b>Determination</b><span>${escapeHtml(e.determination||'—')}</span></div>
+          <div><b>Inspector</b><span>${escapeHtml(e.inspector||'—')}</span></div>
+          <div><b>Bat Roost</b><span class="bat-pill ${batYes?'yes':'no'}">${batYes?'Yes':'No'}</span></div>
+          <div class="entry-full"><b>Defects</b><span>${escapeHtml(e.defects||'—')}</span></div>
+          ${e.notes ? `<div class="entry-full"><b>Notes</b><span>${escapeHtml(e.notes)}</span></div>` : ""}
+        </div>
+        ${(e.photos && e.photos.length) ? `<div class="entry-photo-strip">${e.photos.map(p=>`<div class="ep-thumb" data-photo-src="${escapeAttr(p.url || p.dataUrl)}"><img src="${p.url || p.dataUrl}" alt="${escapeAttr(p.name)}"></div>`).join("")}</div>` : ""}
+        <div class="entry-actions">
+          <button class="btn-edit" data-edit="${escapeAttr(e.recordId)}">Edit</button>
+          <button class="btn-del" data-del="${escapeAttr(e.recordId)}">Delete</button>
+        </div>
+      </div>`;
+    }).join("");
+
+    container.querySelectorAll("[data-photo-src]").forEach(el=>{
+      el.addEventListener("click", ()=> openLightbox(el.dataset.photoSrc));
+    });
+    container.querySelectorAll("[data-edit]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        loadIntoForm(entries[btn.dataset.edit]);
+        document.querySelector('.tab[data-view="form"]').click();
+        window.scrollTo({top:0, behavior:"smooth"});
+      });
+    });
+    container.querySelectorAll("[data-del]").forEach(btn=>{
+      btn.addEventListener("click", ()=> deleteEntry(btn.dataset.del));
+    });
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+  function escapeAttr(s){ return escapeHtml(s); }
+
+  /* ---------------- CSV export ---------------- */
+  function toCsvValue(v){
+    v = v===undefined || v===null ? "" : String(v);
+    if(/[",\n]/.test(v)) v = '"' + v.replace(/"/g,'""') + '"';
+    return v;
+  }
+  function exportCsv(){
+    const list = Object.values(entries).sort((a,b)=> a.recordId.localeCompare(b.recordId, undefined, {numeric:true}));
+    if(list.length===0){ showToast("No entries to export yet.", true); return; }
+    const rows = [CSV_COLUMNS];
+    list.forEach(e=>{
+      rows.push([
+        e.recordId, e.siteName, e.date, e.inspector, e.landManager, e.state, e.lat, e.lng,
+        e.area, e.tag, e.species, e.dbh, e.defects, e.pof, e.size, e.impact, e.riskRating,
+        e.habitats, e.batRoost, e.determination, e.photosTaken, e.photoRef, e.notes
+      ]);
+    });
+    const csv = rows.map(r=>r.map(toCsvValue).join(",")).join("\r\n");
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `APPA_Tree_Assessments_${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`Exported ${list.length} record${list.length===1?"":"s"} as CSV.`);
+  }
+  document.getElementById("btn-export").addEventListener("click", exportCsv);
+
+  /* ---------------- Toast ---------------- */
+  let toastTimer;
+  function showToast(msg, warn){
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "toast show" + (warn ? " warn" : "");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>{ t.className = "toast"; }, 3800);
+  }
+
+  /* ---------------- Init ---------------- */
+  if(!BACKEND_CONFIGURED) document.getElementById("config-banner").classList.add("show");
+  resetForm(false);
+  document.getElementById("f-recordId").value = "AT-001";
+  updateCountBadge();
+  loadEntries();
+
+})();
+</script>
+</body>
+</html>
