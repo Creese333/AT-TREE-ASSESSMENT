@@ -326,10 +326,10 @@
 
   <div class="topbar">
     <div class="brand">
-      <div class="brand-mark">A.T.</div>
+      <div class="brand-mark">A·T</div>
       <div>
         <h1>High-Risk Tree Assessment</h1>
-        <p>Appalachian Trail — Field Data Collection</p>
+        <p>Appalachian National Scenic Trail — Field Data Collection</p>
       </div>
     </div>
     <div class="tabs">
@@ -443,7 +443,7 @@
             </div>
 
             <div class="risk-wrap">
-              <div class="blaze" id="risk-blaze"><span class="num" id="risk-num">–</span><span class="of">of 12</span></div>
+              <div class="blaze" id="risk-blaze"><span class="num" id="risk-num">–</span><span class="of">of 10</span></div>
               <div class="risk-info">
                 <b id="risk-label">Risk Rating — select all three scores</b>
                 <span>Sum of Probability of Failure + Size + Target Impact. A relative indicator only — final hazard calls are made by trained personnel.</span>
@@ -847,9 +847,9 @@
   /* ---------------- Risk / Bat calculations ---------------- */
   function bandFor(total){
     if(total===null) return {cls:"", label:""};
-    if(total<=5) return {cls:"low", label:"Low"};
-    if(total<=8) return {cls:"moderate", label:"Moderate"};
-    if(total<=10) return {cls:"high", label:"High"};
+    if(total<=4) return {cls:"low", label:"Low"};
+    if(total<=6) return {cls:"moderate", label:"Moderate"};
+    if(total<=8) return {cls:"high", label:"High"};
     return {cls:"extreme", label:"Extremely High"};
   }
   function getSelected(name){
@@ -871,7 +871,7 @@
     const band = bandFor(total);
     blaze.className = "blaze " + band.cls;
     num.textContent = total;
-    label.textContent = `Risk Rating: ${total} of 12 — ${band.label}`;
+    label.textContent = `Risk Rating: ${total} of 10 — ${band.label}`;
     return total;
   }
   function updateBatFlag(){
@@ -1036,7 +1036,11 @@
         // backend returns Drive URLs for any uploaded photos — swap those in so we're not
         // holding large base64 strings in memory/local storage going forward.
         if(data.photos){ entries[entry.recordId].photos = data.photos; }
-        showToast(`Saved ${entry.recordId} — shared with the field log.`);
+        if(data.photoErrors && data.photoErrors.length){
+          showToast(`Saved ${entry.recordId}, but ${data.photoErrors.length} photo(s) failed to upload: ${data.photoErrors[0]}`, true);
+        } else {
+          showToast(`Saved ${entry.recordId} — shared with the field log.`);
+        }
       } else {
         saveLocal();
         showToast(`Saved ${entry.recordId} locally (no backend configured — see CONFIG at top of the script).`, true);
@@ -1044,7 +1048,7 @@
     } catch(err){
       storageAvailable = false;
       saveLocal();
-      showToast(`Saved ${entry.recordId} on this device only — couldn't reach the shared log.`, true);
+      showToast(`Saved ${entry.recordId} on this device only — ${err.message}`, true);
     }
     document.getElementById("btn-save").disabled = false;
     resetForm(true);
