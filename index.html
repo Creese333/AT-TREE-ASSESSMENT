@@ -125,7 +125,8 @@
   }
   input:focus,select:focus,textarea:focus{outline:2px solid var(--forest-light);outline-offset:1px;border-color:var(--forest-light);}
   textarea{resize:vertical;min-height:70px;}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .row2{display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:10px;}
+  .row2-tight{grid-template-columns:1fr 1fr;}
   .row-id-btn{display:flex;gap:8px;}
   .row-id-btn input{flex:1;}
   .btn-mini{
@@ -404,7 +405,7 @@
         <div class="card">
           <div class="card-head"><div class="card-num">2</div><h2>Tree Identification</h2></div>
           <div class="card-body">
-            <div class="row2">
+            <div class="row2 row2-tight">
               <div class="field">
                 <label class="flabel">Tree Tag #</label>
                 <input type="text" id="f-tag" placeholder="None">
