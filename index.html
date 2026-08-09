@@ -441,9 +441,17 @@
                 <div class="typeahead-list" id="species-suggestions"></div>
               </div>
               <div class="hint">Tap a suggestion, or type a species not on the list and use it as typed.</div>
+              <div class="chip-grid" id="organ-picker" style="margin-bottom:8px;">
+                <label class="chip organ-chip"><input type="radio" name="organ" value="auto" checked><span>Auto</span></label>
+                <label class="chip organ-chip"><input type="radio" name="organ" value="bark"><span>Bark</span></label>
+                <label class="chip organ-chip"><input type="radio" name="organ" value="leaf"><span>Leaf</span></label>
+                <label class="chip organ-chip"><input type="radio" name="organ" value="flower"><span>Flower</span></label>
+                <label class="chip organ-chip"><input type="radio" name="organ" value="fruit"><span>Fruit</span></label>
+                <label class="chip organ-chip"><input type="radio" name="organ" value="habit"><span>Whole Tree</span></label>
+              </div>
               <button type="button" class="btn-mini identify-btn" id="btn-plantnet">🔍 Not sure? Identify with Pl@ntNet</button>
               <input type="file" id="input-plantnet-photo" accept="image/*" capture="environment" style="display:none;">
-              <div class="hint" id="plantnet-hint">Takes a photo, sends it to Pl@ntNet, and suggests matching species.</div>
+              <div class="hint" id="plantnet-hint">Pick what the photo shows above for best accuracy — bark/trunk shots work better than "Auto" when there are no leaves.</div>
               <div class="typeahead-list" id="plantnet-results" style="position:static;margin-top:8px;"></div>
             </div>
             <div class="row2 row2-tight">
@@ -755,9 +763,10 @@
 
     try{
       const dataUrl = await compressImage(file);
+      const organ = (document.querySelector('input[name="organ"]:checked') || {}).value || "auto";
       const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
         method: "POST",
-        body: JSON.stringify({ action:"identify", token: CONFIG.SHARED_TOKEN, dataUrl, organ:"auto" })
+        body: JSON.stringify({ action:"identify", token: CONFIG.SHARED_TOKEN, dataUrl, organ })
       });
       const data = await res.json();
       if(!data.ok) throw new Error(data.error || "identification failed");
