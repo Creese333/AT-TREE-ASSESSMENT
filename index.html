@@ -111,6 +111,25 @@
   }
   label.flabel .req{color:var(--rust);}
   .hint{font-size:11.5px;color:var(--ink-soft);margin-top:4px;line-height:1.4;}
+  .typeahead-wrap{position:relative;}
+  .typeahead-list{
+    position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:30;
+    background:var(--white);border:1.5px solid var(--forest-light);border-radius:8px;
+    max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.18);
+    display:none;
+  }
+  .typeahead-list.show{display:block;}
+  .typeahead-item{
+    padding:11px 12px;font-size:14px;cursor:pointer;border-bottom:1px solid var(--parchment-deep);
+    color:var(--ink);
+  }
+  .typeahead-item:last-child{border-bottom:none;}
+  .typeahead-item:active,.typeahead-item.highlighted{background:var(--parchment-deep);}
+  .typeahead-item .ta-rank{
+    display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
+    color:var(--rust);margin-right:6px;
+  }
+  .typeahead-empty{padding:11px 12px;font-size:13px;color:var(--ink-soft);}
   input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{
     width:100%;padding:10px 11px;font-size:15px;font-family:'Inter',sans-serif;
     border:1.5px solid var(--line);border-radius:8px;background:var(--white);color:var(--ink);
@@ -413,8 +432,11 @@
           <div class="card-body">
             <div class="field">
               <label class="flabel">Species <span class="req">*</span></label>
-              <select id="f-species" required></select>
-              <input type="text" id="f-species-other" placeholder="Specify species" style="display:none;margin-top:8px;">
+              <div class="typeahead-wrap">
+                <input type="text" id="f-species" placeholder="Start typing to search — e.g. ash, oak, hemlock..." required autocomplete="off">
+                <div class="typeahead-list" id="species-suggestions"></div>
+              </div>
+              <div class="hint">Tap a suggestion, or type a species not on the list and use it as typed.</div>
             </div>
             <div class="row2 row2-tight">
               <div class="field">
@@ -795,12 +817,66 @@
   fillSelect(document.getElementById("f-landManager"), LAND_MANAGERS, "Select...");
   fillSelect(document.getElementById("f-state"), STATES, "Select...");
   fillSelect(document.getElementById("f-area"), AREAS, "Select...");
-  fillSelect(document.getElementById("f-species"), SPECIES, "Select species...");
   fillSelect(document.getElementById("f-determination"), DETERMINATIONS, "Select...");
 
-  document.getElementById("f-species").addEventListener("change", e=>{
-    const other = document.getElementById("f-species-other");
-    other.style.display = e.target.value.startsWith("Other") ? "block" : "none";
+  /* ---------------- Species type-ahead ---------------- */
+  const speciesInput = document.getElementById("f-species");
+  const speciesList = document.getElementById("species-suggestions");
+  let speciesHighlight = -1;
+
+  function speciesMatches(query){
+    const q = query.trim().toLowerCase();
+    if(!q) return SPECIES.slice(0, 8); // empty focus: show top hazard-ranked species as quick picks
+    return SPECIES.filter(s => s.toLowerCase().includes(q)).slice(0, 8);
+  }
+  function renderSpeciesList(query){
+    const matches = speciesMatches(query);
+    speciesHighlight = -1;
+    if(matches.length===0){
+      speciesList.innerHTML = `<div class="typeahead-empty">No match — your typed text will be used as entered.</div>`;
+    } else {
+      speciesList.innerHTML = matches.map((s,i)=>{
+        return `<div class="typeahead-item" data-idx="${i}" data-value="${escapeAttr(s)}">${escapeHtml(s)}</div>`;
+      }).join("");
+    }
+    speciesList.classList.add("show");
+  }
+  function hideSpeciesList(){ speciesList.classList.remove("show"); }
+  function selectSpecies(value){
+    speciesInput.value = value;
+    hideSpeciesList();
+  }
+  speciesInput.addEventListener("focus", ()=> renderSpeciesList(speciesInput.value));
+  speciesInput.addEventListener("input", ()=> renderSpeciesList(speciesInput.value));
+  speciesInput.addEventListener("keydown", e=>{
+    const items = [...speciesList.querySelectorAll(".typeahead-item")];
+    if(e.key==="ArrowDown"){
+      e.preventDefault();
+      speciesHighlight = Math.min(speciesHighlight+1, items.length-1);
+      items.forEach((it,i)=>it.classList.toggle("highlighted", i===speciesHighlight));
+      if(items[speciesHighlight]) items[speciesHighlight].scrollIntoView({block:"nearest"});
+    } else if(e.key==="ArrowUp"){
+      e.preventDefault();
+      speciesHighlight = Math.max(speciesHighlight-1, 0);
+      items.forEach((it,i)=>it.classList.toggle("highlighted", i===speciesHighlight));
+      if(items[speciesHighlight]) items[speciesHighlight].scrollIntoView({block:"nearest"});
+    } else if(e.key==="Enter"){
+      if(speciesHighlight>=0 && items[speciesHighlight]){
+        e.preventDefault();
+        selectSpecies(items[speciesHighlight].dataset.value);
+      } else {
+        hideSpeciesList();
+      }
+    } else if(e.key==="Escape"){
+      hideSpeciesList();
+    }
+  });
+  speciesList.addEventListener("click", e=>{
+    const item = e.target.closest(".typeahead-item");
+    if(item && item.dataset.value) selectSpecies(item.dataset.value);
+  });
+  document.addEventListener("click", e=>{
+    if(!e.target.closest(".typeahead-wrap")) hideSpeciesList();
   });
 
   function buildChips(container, options, name){
@@ -952,7 +1028,7 @@
   function resetForm(clearId){
     document.getElementById("tree-form").reset();
     document.getElementById("f-date").value = new Date().toISOString().slice(0,10);
-    document.getElementById("f-species-other").style.display = "none";
+    hideSpeciesList();
     photosTaken = "No";
     document.querySelectorAll("[data-photos]").forEach(b=>b.classList.toggle("active", b.dataset.photos==="No"));
     currentPhotos = [];
@@ -971,11 +1047,7 @@
     const date = document.getElementById("f-date").value;
     const inspector = document.getElementById("f-inspector").value.trim();
     const dbh = document.getElementById("f-dbh").value;
-    let species = document.getElementById("f-species").value;
-    if(species.startsWith("Other")){
-      const custom = document.getElementById("f-species-other").value.trim();
-      if(custom) species = custom + " (Other)";
-    }
+    const species = document.getElementById("f-species").value.trim();
     const defects = [...document.querySelectorAll('input[name="defect"]:checked')].map(b=>b.value);
     const pof = getSelected("pof"), size = getSelected("size"), impact = getSelected("impact");
     const habitats = [...document.querySelectorAll('input[name="habitat"]:checked')].map(b=>b.value);
@@ -1075,14 +1147,7 @@
     document.getElementById("f-area").value = entry.area || "";
     document.getElementById("f-tag").value = entry.tag==="None" ? "" : entry.tag;
     document.getElementById("f-dbh").value = entry.dbh;
-    const speciesSel = document.getElementById("f-species");
-    if(SPECIES.includes(entry.species)){
-      speciesSel.value = entry.species;
-    } else {
-      speciesSel.value = "Other (List in Notes)";
-      document.getElementById("f-species-other").style.display = "block";
-      document.getElementById("f-species-other").value = entry.species.replace(" (Other)","");
-    }
+    document.getElementById("f-species").value = entry.species || "";
     (entry.defects||"").split("; ").filter(Boolean).forEach(v=>{
       const box = document.querySelector(`input[name="defect"][value="${CSS.escape(v)}"]`);
       if(box) box.checked = true;
