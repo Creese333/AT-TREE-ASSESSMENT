@@ -51,19 +51,19 @@
   .brand{display:flex;align-items:center;justify-content:center;text-align:center;gap:12px;margin-bottom:14px;}
   .brand h1{color:var(--white);font-size:26px;line-height:1.2;font-weight:700;}
   .brand p{margin:2px 0 0;font-size:14px;color:#C8D8CC;letter-spacing:0.3px;}
-  .tabs{display:flex;gap:2px;}
+  .tabs{display:flex;gap:2px;align-items:stretch;}
   .tab{
     flex:1;background:transparent;border:none;color:#B9CBBE;
-    padding:9px 2px 11px;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;
+    padding:9px 2px 11px;font-family:'Inter',sans-serif;font-weight:700;font-size:14.5px;
     cursor:pointer;border-bottom:3px solid transparent;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:5px;
     line-height:1.15;text-align:center;
   }
-  .tab .tab-icon{font-size:21px;line-height:1;}
+  .tab .tab-icon{font-size:24px;line-height:1;}
   .tab.active{color:var(--white);border-bottom-color:var(--rust);}
   .tab .badge{
     background:var(--rust);color:var(--white);border-radius:20px;
-    font-family:'IBM Plex Mono',monospace;font-size:11px;padding:1px 7px;min-width:17px;text-align:center;
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:1px 7px;min-width:17px;text-align:center;
     display:inline-block;margin-left:3px;
   }
   .tab.active .badge{background:var(--amber);}
@@ -367,7 +367,7 @@
             </div>
             <div class="field">
               <label class="flabel">Site Name <span class="req">*</span></label>
-              <input type="text" id="f-siteName" placeholder="e.g. Ed Garvey Shelter" required>
+              <input type="text" id="f-siteName" placeholder="e.g. Conndoguinnet Boardwalk" required>
             </div>
             <div class="row2">
               <div class="field">
@@ -618,7 +618,7 @@
   const LAND_MANAGERS = ["APPA","USFS","STATE","GRSM","DEWA","SHEN","CHOH","OTHER"];
   const STATES = ["GA","NC","TN","VA","WV","MD","PA","NJ","NY","CT","MA","VT","NH","ME"];
   const AREAS = ["Shelter","Campsite (designated)","Privy","Vista","Trailhead","Bridge","Parking Area","Boundary (non-congregation)","Other"];
-  const SPECIES = ["White Ash (Fraxinus americana)","Green Ash (Fraxinus pennsylvanica)","Black Ash (Fraxinus nigra)","Eastern Hemlock (Tsuga canadensis)","American Beech (Fagus grandifolia)","Silver Maple (Acer saccharinum)","Box Elder (Acer negundo)","Black Locust (Robinia pseudoacacia)","Eastern Cottonwood (Populus deltoides)","Butternut (Juglans cinerea)","American Elm (Ulmus americana)","Slippery Elm (Ulmus rubra)","Black Cherry (Prunus serotina)","Willow Oak (Quercus phellos)","Pin Oak (Quercus palustris)","Red Oak (Quercus rubra)","White Oak (Quercus alba)","Chestnut Oak (Quercus montana)","Black Oak (Quercus velutina)","Scarlet Oak (Quercus coccinea)","Post Oak (Quercus stellata)","Red Maple (Acer rubrum)","Sugar Maple (Acer saccharum)","Striped Maple (Acer pensylvanicum)","Eastern White Pine (Pinus strobus)","Virginia Pine (Pinus virginiana)","Loblolly Pine (Pinus taeda)","Pitch Pine (Pinus rigida)","Shortleaf Pine (Pinus echinata)","Tulip Poplar (Liriodendron tulipifera)","American Sycamore (Platanus occidentalis)","Shagbark Hickory (Carya ovata)","Pignut Hickory (Carya glabra)","Mockernut Hickory (Carya tomentosa)","Bitternut Hickory (Carya cordiformis)","Sweetgum (Liquidambar styraciflua)","Sourwood (Oxydendrum arboreum)","American Basswood (Tilia americana)","Eastern Redcedar (Juniperus virginiana)","Balsam Fir (Abies balsamea)","Fraser Fir (Abies fraseri)","Red Spruce (Picea rubens)","Yellow Birch (Betula alleghaniensis)","Paper Birch (Betula papyrifera)","Sweet Birch (Betula lenta)","Sassafras (Sassafras albidum)","Black Walnut (Juglans nigra)","Black Gum (Nyssa sylvatica)","Eastern Hophornbeam (Ostrya virginiana)","Flowering Dogwood (Cornus florida)","Other (List in Notes)"];
+  const SPECIES = ["White Ash (Fraxinus americana)","Green Ash (Fraxinus pennsylvanica)","Black Ash (Fraxinus nigra)","Eastern Hemlock (Tsuga canadensis)","American Elm (Ulmus americana)","American Beech (Fagus grandifolia)","Silver Maple (Acer saccharinum)","Boxelder (Acer negundo)","Black Locust (Robinia pseudoacacia)","Callery Pear (Pyrus calleryana)","Tuliptree (Liriodendron tulipifera)","Eastern Cottonwood (Populus deltoides)","Black Willow (Salix nigra)","Butternut (Juglans cinerea)","Black Cherry (Prunus serotina)","Northern Red Oak (Quercus rubra)","Pin Oak (Quercus palustris)","Scarlet Oak (Quercus coccinea)","American Chestnut (Castanea dentata)","Flowering Dogwood (Cornus florida)","Eastern White Pine (Pinus strobus)","Virginia Pine (Pinus virginiana)","Yellow Birch (Betula alleghaniensis)","Paper Birch (Betula papyrifera)","Black Walnut (Juglans nigra)","White Oak (Quercus alba)","Black Oak (Quercus velutina)","Chestnut Oak (Quercus montana)","Southern Red Oak (Quercus falcata)","Post Oak (Quercus stellata)","Bur Oak (Quercus macrocarpa)","Swamp White Oak (Quercus bicolor)","Willow Oak (Quercus phellos)","Water Oak (Quercus nigra)","Overcup Oak (Quercus lyrata)","Blackjack Oak (Quercus marilandica)","Shumard Oak (Quercus shumardii)","Chinkapin Oak (Quercus muehlenbergii)","Sugar Maple (Acer saccharum)","Red Maple (Acer rubrum)","Striped Maple (Acer pensylvanicum)","Mountain Maple (Acer spicatum)","Shagbark Hickory (Carya ovata)","Pignut Hickory (Carya glabra)","Mockernut Hickory (Carya tomentosa)","Bitternut Hickory (Carya cordiformis)","Shellbark Hickory (Carya laciniosa)","Pitch Pine (Pinus rigida)","Table Mountain Pine (Pinus pungens)","Shortleaf Pine (Pinus echinata)","Loblolly Pine (Pinus taeda)","Red Spruce (Picea rubens)","Fraser Fir (Abies fraseri)","Sweet Birch (Betula lenta)","River Birch (Betula nigra)","Slippery Elm (Ulmus rubra)","American Basswood (Tilia americana)","Sweetgum (Liquidambar styraciflua)","American Sycamore (Platanus occidentalis)","Black Tupelo (Nyssa sylvatica)","Water Tupelo (Nyssa aquatica)","Common Persimmon (Diospyros virginiana)","Eastern Redcedar (Juniperus virginiana)","Serviceberry (Amelanchier arborea)","Eastern Redbud (Cercis canadensis)","Eastern Hophornbeam (Ostrya virginiana)","American Hornbeam (Carpinus caroliniana)","Sourwood (Oxydendrum arboreum)","Honeylocust (Gleditsia triacanthos)","Northern Catalpa (Catalpa speciosa)","Red Mulberry (Morus rubra)","Osage Orange (Maclura pomifera)","Hackberry (Celtis occidentalis)","Sassafras (Sassafras albidum)","Witch Hazel (Hamamelis virginiana)","Pawpaw (Asimina triloba)","Cucumbertree Magnolia (Magnolia acuminata)","Umbrella Magnolia (Magnolia tripetala)","Sweetbay Magnolia (Magnolia virginiana)","Southern Magnolia (Magnolia grandiflora)","Bald Cypress (Taxodium distichum)","Atlantic White Cedar (Chamaecyparis thyoides)","Yellow Buckeye (Aesculus flava)","Ohio Buckeye (Aesculus glabra)","Allegheny Chinquapin (Castanea pumila)","American Holly (Ilex opaca)","Cucumber Magnolia, Northern Form (Magnolia acuminata var. subcordata)","Black Birch, Mountain Form (Betula lenta var.)","Speckled Alder (Alnus incana)","Smooth Alder (Alnus serrulata)","Pussy Willow (Salix discolor)","Quaking Aspen (Populus tremuloides)","Bigtooth Aspen (Populus grandidentata)","Balsam Fir (Abies balsamea)","Eastern Larch / Tamarack (Larix laricina)","Red Pine (Pinus resinosa)","Devil's Walkingstick (Aralia spinosa)","Sweet Crabapple (Malus coronaria)","Common Hoptree (Ptelea trifoliata)","American Mountain-Ash (Sorbus americana)","Other (List in Notes)"];
   const DEFECTS = [
     ["D","Decay"],["CR","Crack"],["Root","Root problems"],["WBU","Weak branch union"],["CA","Canker"],
     ["PTA:LT","Leaning tree"],["PTA:TT","Topped tree"],["EE","Excessive epicormics"],["DEAD","Dead tree/top/branches"],
