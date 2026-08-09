@@ -153,6 +153,10 @@
     border-radius:8px;padding:0 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
   }
   .btn-mini:active{background:var(--parchment-deep);}
+  .identify-btn{
+    display:flex;align-items:center;justify-content:center;width:100%;
+    padding:10px 12px;margin-top:9px;text-decoration:none;font-size:13px;
+  }
 
   /* checkbox / radio chip grids */
   .chip-grid{display:flex;flex-wrap:wrap;gap:7px;}
@@ -386,7 +390,7 @@
             </div>
             <div class="field">
               <label class="flabel">Site Name <span class="req">*</span></label>
-              <input type="text" id="f-siteName" placeholder="e.g. Conndoguinnet Boardwalk" required>
+              <input type="text" id="f-siteName" placeholder="e.g. Ed Garvey Shelter" required>
             </div>
             <div class="row2">
               <div class="field">
@@ -437,6 +441,10 @@
                 <div class="typeahead-list" id="species-suggestions"></div>
               </div>
               <div class="hint">Tap a suggestion, or type a species not on the list and use it as typed.</div>
+              <button type="button" class="btn-mini identify-btn" id="btn-plantnet">🔍 Not sure? Identify with Pl@ntNet</button>
+              <input type="file" id="input-plantnet-photo" accept="image/*" capture="environment" style="display:none;">
+              <div class="hint" id="plantnet-hint">Takes a photo, sends it to Pl@ntNet, and suggests matching species.</div>
+              <div class="typeahead-list" id="plantnet-results" style="position:static;margin-top:8px;"></div>
             </div>
             <div class="row2 row2-tight">
               <div class="field">
@@ -719,6 +727,69 @@
   function currentPhotoBytes(){
     return currentPhotos.reduce((sum,p)=> sum + (p.dataUrl ? Math.round(p.dataUrl.length*0.75) : 0), 0);
   }
+
+  /* ---------------- Pl@ntNet identification ---------------- */
+  const plantnetBtn = document.getElementById("btn-plantnet");
+  const plantnetInput = document.getElementById("input-plantnet-photo");
+  const plantnetResults = document.getElementById("plantnet-results");
+  const plantnetHint = document.getElementById("plantnet-hint");
+  const plantnetHintDefault = plantnetHint.textContent;
+
+  plantnetBtn.addEventListener("click", ()=>{
+    if(!BACKEND_CONFIGURED){
+      showToast("Identification needs the shared backend configured — see CONFIG at top of the script.", true);
+      return;
+    }
+    plantnetInput.click();
+  });
+
+  plantnetInput.addEventListener("change", async (e)=>{
+    const file = e.target.files[0];
+    e.target.value = "";
+    if(!file) return;
+
+    plantnetResults.classList.remove("show");
+    plantnetResults.innerHTML = "";
+    plantnetHint.textContent = "Identifying — this can take a few seconds…";
+    plantnetBtn.disabled = true;
+
+    try{
+      const dataUrl = await compressImage(file);
+      const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action:"identify", token: CONFIG.SHARED_TOKEN, dataUrl, organ:"auto" })
+      });
+      const data = await res.json();
+      if(!data.ok) throw new Error(data.error || "identification failed");
+
+      if(!data.results || data.results.length===0){
+        plantnetHint.textContent = data.note || "No plant recognized in that photo — try a clearer shot of leaves or bark.";
+        return;
+      }
+
+      plantnetHint.textContent = plantnetHintDefault;
+      plantnetResults.innerHTML = data.results.map(r=>{
+        const label = r.commonName ? `${r.commonName} (${r.scientificName})` : r.scientificName;
+        const pct = Math.round((r.score||0)*100);
+        return `<div class="typeahead-item" data-value="${escapeAttr(label)}">${escapeHtml(label)} <span style="color:var(--ink-soft);font-size:11.5px;">— ${pct}% match</span></div>`;
+      }).join("");
+      plantnetResults.classList.add("show");
+    }catch(err){
+      plantnetHint.textContent = `Couldn't identify: ${err.message}`;
+    }finally{
+      plantnetBtn.disabled = false;
+    }
+  });
+
+  plantnetResults.addEventListener("click", e=>{
+    const item = e.target.closest(".typeahead-item");
+    if(item && item.dataset.value){
+      speciesInput.value = item.dataset.value;
+      plantnetResults.classList.remove("show");
+      plantnetResults.innerHTML = "";
+      plantnetHint.textContent = plantnetHintDefault;
+    }
+  });
 
   async function handlePhotoFiles(fileList){
     const files = [...fileList].filter(f=> f.type.startsWith("image/"));
