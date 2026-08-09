@@ -48,20 +48,9 @@
     position:sticky;top:0;z-index:20;
     box-shadow:0 4px 16px rgba(0,0,0,0.18);
   }
-  .brand{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
-  .brand-mark{
-    flex:0 0 auto;
-    width:46px;height:46px;
-    background:var(--parchment);
-    color:var(--forest-dark);
-    border-radius:6px;
-    display:flex;align-items:center;justify-content:center;
-    font-family:'Roboto Slab',serif;font-weight:900;font-size:15px;letter-spacing:0.5px;
-    border:2px solid var(--rust);
-    transform:rotate(-2deg);
-  }
-  .brand h1{color:var(--white);font-size:18px;line-height:1.15;font-weight:700;}
-  .brand p{margin:2px 0 0;font-size:12px;color:#C8D8CC;letter-spacing:0.3px;}
+  .brand{display:flex;align-items:center;justify-content:center;text-align:center;gap:12px;margin-bottom:14px;}
+  .brand h1{color:var(--white);font-size:26px;line-height:1.2;font-weight:700;}
+  .brand p{margin:2px 0 0;font-size:14px;color:#C8D8CC;letter-spacing:0.3px;}
   .tabs{display:flex;gap:2px;}
   .tab{
     flex:1;background:transparent;border:none;color:#B9CBBE;
@@ -126,9 +115,11 @@
   }
   input:focus,select:focus,textarea:focus{outline:2px solid var(--forest-light);outline-offset:1px;border-color:var(--forest-light);}
   textarea{resize:vertical;min-height:70px;}
-  .row2{display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:10px;}
+  .row2{display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:14px;margin-bottom:14px;}
+  .row2:last-child{margin-bottom:0;}
   .row2-tight{grid-template-columns:1fr 1fr;}
-  .row2 .field, .row2-tight .field{min-width:0;}
+  .row2 .field, .row2-tight .field{min-width:0;margin-bottom:0;}
+  .row2-tight .field{display:flex;flex-direction:column;justify-content:flex-end;}
   @media (max-width:480px){
     .row2:not(.row2-tight){grid-template-columns:1fr;}
   }
@@ -339,8 +330,7 @@
 
   <div class="topbar">
     <div class="brand">
-      <div class="brand-mark">A.T.</div>
-      <div>
+            <div>
         <h1>High-Risk Tree Assessment</h1>
         <p>Appalachian Trail — Field Data Collection</p>
       </div>
@@ -373,7 +363,7 @@
             </div>
             <div class="field">
               <label class="flabel">Site Name <span class="req">*</span></label>
-              <input type="text" id="f-siteName" placeholder="e.g. Garvey Shelter" required>
+              <input type="text" id="f-siteName" placeholder="e.g. Conndoguinnet Boardwalk" required>
             </div>
             <div class="row2">
               <div class="field">
@@ -417,20 +407,20 @@
         <div class="card">
           <div class="card-head"><div class="card-num">2</div><h2>Tree Identification</h2></div>
           <div class="card-body">
-            <div class="row2 row2-tight">
-              <div class="field">
-                <label class="flabel">Tree Tag #</label>
-                <input type="text" id="f-tag" placeholder="None">
-              </div>
-              <div class="field">
-                <label class="flabel">DBH — Diameter at Breast Height (in.) <span class="req">*</span></label>
-                <input type="number" step="0.1" min="0" id="f-dbh" placeholder="e.g. 22.5" required>
-              </div>
-            </div>
             <div class="field">
               <label class="flabel">Species <span class="req">*</span></label>
               <select id="f-species" required></select>
               <input type="text" id="f-species-other" placeholder="Specify species" style="display:none;margin-top:8px;">
+            </div>
+            <div class="row2 row2-tight">
+              <div class="field">
+                <label class="flabel">DBH — Diameter at Breast Height (in.) <span class="req">*</span></label>
+                <input type="number" step="0.1" min="0" id="f-dbh" placeholder="e.g. 22.5" required>
+              </div>
+              <div class="field">
+                <label class="flabel">Tree Tag #</label>
+                <input type="text" id="f-tag" placeholder="None">
+              </div>
             </div>
           </div>
         </div>
