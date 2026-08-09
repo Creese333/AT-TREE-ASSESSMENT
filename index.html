@@ -283,8 +283,15 @@
     background:var(--white);border:none;font-size:18px;cursor:pointer;color:var(--forest-dark);
   }
   .entry-photo-strip{display:flex;gap:6px;padding:0 13px 11px;flex-wrap:wrap;}
-  .entry-photo-strip .ep-thumb{width:52px;height:52px;border-radius:6px;overflow:hidden;border:1px solid var(--line);cursor:pointer;flex:0 0 auto;}
+  .entry-photo-strip .ep-thumb{width:52px;height:52px;border-radius:6px;overflow:hidden;border:1px solid var(--line);cursor:pointer;flex:0 0 auto;position:relative;}
   .entry-photo-strip .ep-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .entry-photo-strip .ep-fallback{display:none;}
+  .entry-photo-strip .ep-thumb.img-failed img{display:none;}
+  .entry-photo-strip .ep-thumb.img-failed .ep-fallback{
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    width:100%;height:100%;background:var(--parchment-deep);color:var(--forest-dark);
+    font-size:9.5px;font-weight:700;line-height:1.2;padding:4px;
+  }
   .entry-actions{display:flex;gap:8px;padding:0 13px 12px;}
   .entry-actions button{
     flex:1;padding:8px;font-size:12px;font-weight:700;border-radius:7px;cursor:pointer;font-family:'Inter',sans-serif;
@@ -332,10 +339,10 @@
 
   <div class="topbar">
     <div class="brand">
-      <div class="brand-mark">A.T.</div>
+      <div class="brand-mark">A·T</div>
       <div>
         <h1>High-Risk Tree Assessment</h1>
-        <p>Appalachian Trail — Field Data Collection</p>
+        <p>Appalachian National Scenic Trail — Field Data Collection</p>
       </div>
     </div>
     <div class="tabs">
@@ -734,7 +741,7 @@
     const hint = document.getElementById("photo-hint");
     wrap.innerHTML = currentPhotos.map((p,i)=>`
       <div class="photo-thumb" data-view="${i}">
-        <img src="${p.url || p.dataUrl}" alt="${escapeAttr(p.name)}">
+        <img src="${p.url || p.dataUrl}" alt="${escapeAttr(p.name)}" onerror="this.closest('.ep-thumb') && this.closest('.ep-thumb').classList.add('img-failed')">
         <button type="button" class="rm" data-remove="${i}" aria-label="Remove photo">✕</button>
       </div>`).join("");
     if(currentPhotos.length===0){
@@ -1043,7 +1050,7 @@
         // holding large base64 strings in memory/local storage going forward.
         if(data.photos){ entries[entry.recordId].photos = data.photos; }
         if(data.photoErrors && data.photoErrors.length){
-          showToast(`Saved ${entry.recordId}, but ${data.photoErrors.length} photo(s) failed to upload: ${data.photoErrors[0]}`, true);
+          showToast(`Saved ${entry.recordId}, but ${data.photoErrors.length} photo(s) had a note: ${data.photoErrors[0]}`, true);
         } else {
           showToast(`Saved ${entry.recordId} — shared with the field log.`);
         }
@@ -1212,7 +1219,7 @@
           <div class="entry-full"><b>Defects</b><span>${escapeHtml(e.defects||'—')}</span></div>
           ${e.notes ? `<div class="entry-full"><b>Notes</b><span>${escapeHtml(e.notes)}</span></div>` : ""}
         </div>
-        ${(e.photos && e.photos.length) ? `<div class="entry-photo-strip">${e.photos.map(p=>`<div class="ep-thumb" data-photo-src="${escapeAttr(p.url || p.dataUrl)}"><img src="${p.url || p.dataUrl}" alt="${escapeAttr(p.name)}"></div>`).join("")}</div>` : ""}
+        ${(e.photos && e.photos.length) ? `<div class="entry-photo-strip">${e.photos.map(p=>`<div class="ep-thumb" data-photo-src="${escapeAttr(p.url || p.dataUrl)}" data-drive-link="${escapeAttr(p.driveLink || '')}"><img src="${p.url || p.dataUrl}" alt="${escapeAttr(p.name)}" onerror="this.closest('.ep-thumb') && this.closest('.ep-thumb').classList.add('img-failed')"><span class="ep-fallback">Open in Drive</span></div>`).join("")}</div>` : ""}
         <div class="entry-actions">
           <button class="btn-edit" data-edit="${escapeAttr(e.recordId)}">Edit</button>
           <button class="btn-del" data-del="${escapeAttr(e.recordId)}">Delete</button>
@@ -1221,7 +1228,13 @@
     }).join("");
 
     container.querySelectorAll("[data-photo-src]").forEach(el=>{
-      el.addEventListener("click", ()=> openLightbox(el.dataset.photoSrc));
+      el.addEventListener("click", ()=>{
+        if(el.classList.contains("img-failed") && el.dataset.driveLink){
+          window.open(el.dataset.driveLink, "_blank");
+        } else {
+          openLightbox(el.dataset.photoSrc);
+        }
+      });
     });
     container.querySelectorAll("[data-edit]").forEach(btn=>{
       btn.addEventListener("click", ()=>{
