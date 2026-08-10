@@ -346,14 +346,15 @@
   }
   .stat-card .stat-value{font-family:'Roboto Slab',serif;font-weight:900;font-size:26px;color:var(--forest-dark);line-height:1;}
   .stat-card .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:0.4px;color:var(--ink-soft);font-weight:600;margin-top:5px;display:block;}
-  .chart-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .chart-row{margin-bottom:12px;}
   .chart-row:last-child{margin-bottom:0;}
   .chart-label{
-    flex:0 0 92px;font-size:12px;font-weight:600;color:var(--ink);
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    font-size:12.5px;font-weight:600;color:var(--ink);
+    line-height:1.35;margin-bottom:4px;
   }
+  .chart-bar-line{display:flex;align-items:center;gap:10px;}
   .chart-track{
-    flex:1;height:18px;background:var(--parchment-deep);border-radius:5px;overflow:hidden;position:relative;
+    flex:1;height:16px;background:var(--parchment-deep);border-radius:5px;overflow:hidden;position:relative;
   }
   .chart-fill{height:100%;border-radius:5px;transition:width .4s ease;min-width:3px;}
   .chart-value{
@@ -1566,8 +1567,10 @@
       return `
         <div class="chart-row">
           <div class="chart-label" title="${escapeAttr(label)}">${escapeHtml(label)}</div>
-          <div class="chart-track"><div class="chart-fill" style="width:${pct}%;background:${color};"></div></div>
-          <div class="chart-value">${count}</div>
+          <div class="chart-bar-line">
+            <div class="chart-track"><div class="chart-fill" style="width:${pct}%;background:${color};"></div></div>
+            <div class="chart-value">${count}</div>
+          </div>
         </div>`;
     }).join("");
   }
@@ -1629,8 +1632,10 @@
         return `
           <div class="chart-row">
             <div class="chart-label">${escapeHtml(label)}</div>
-            <div class="chart-track"><div class="chart-fill" style="width:${pct}%;background:${riskColorFor(label)};"></div></div>
-            <div class="chart-value">${count}</div>
+            <div class="chart-bar-line">
+              <div class="chart-track"><div class="chart-fill" style="width:${pct}%;background:${riskColorFor(label)};"></div></div>
+              <div class="chart-value">${count}</div>
+            </div>
           </div>`;
       }).join("");
     }
