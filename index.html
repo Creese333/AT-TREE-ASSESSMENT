@@ -338,6 +338,30 @@
   .empty-state h3{color:var(--forest-dark);margin-bottom:6px;font-size:16px;}
   .empty-state p{font-size:13px;line-height:1.5;max-width:320px;margin:0 auto;}
 
+  /* analytics view */
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .stat-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;box-shadow:var(--shadow);
+  }
+  .stat-card .stat-value{font-family:'Roboto Slab',serif;font-weight:900;font-size:26px;color:var(--forest-dark);line-height:1;}
+  .stat-card .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:0.4px;color:var(--ink-soft);font-weight:600;margin-top:5px;display:block;}
+  .chart-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .chart-row:last-child{margin-bottom:0;}
+  .chart-label{
+    flex:0 0 92px;font-size:12px;font-weight:600;color:var(--ink);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .chart-track{
+    flex:1;height:18px;background:var(--parchment-deep);border-radius:5px;overflow:hidden;position:relative;
+  }
+  .chart-fill{height:100%;border-radius:5px;transition:width .4s ease;min-width:3px;}
+  .chart-value{
+    flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12px;
+    color:var(--ink);min-width:20px;text-align:right;
+  }
+  .chart-empty-note{font-size:12.5px;color:var(--ink-soft);text-align:center;padding:12px 0;}
+
   /* guide view */
   .guide-section{margin-bottom:18px;}
   .guide-section h3{font-size:13.5px;text-transform:uppercase;letter-spacing:0.4px;color:var(--forest-dark);margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--line);}
@@ -379,6 +403,7 @@
       <button class="tab active" data-view="form"><span class="tab-icon">📋</span><span class="tab-label">Log a Tree</span></button>
       <button class="tab" data-view="table"><span class="tab-icon">🗂️</span><span class="tab-label">Field Log<span class="badge" id="count-badge">0</span></span></button>
       <button class="tab" data-view="guide"><span class="tab-icon">📖</span><span class="tab-label">Scoring Guide</span></button>
+      <button class="tab" data-view="analytics"><span class="tab-icon">📊</span><span class="tab-label">Analytics</span></button>
     </div>
   </div>
 
@@ -644,6 +669,43 @@
         <div class="code-row"><div class="code">ATC</div><div class="desc">Guidance on Appalachian Trail Hazardous Trees, Final, April 2026.</div></div>
         <div class="code-row"><div class="code">USDA FS</div><div class="desc">Urban Tree Risk Management: A Community Guide to Program Design and Implementation (NA-TP-03-03, 2006).</div></div>
         <div class="code-row"><div class="code">APPA</div><div class="desc">Programmatic Biological Assessment, bat conservation measures.</div></div>
+      </div>
+    </section>
+
+    <!-- ============ ANALYTICS VIEW ============ -->
+    <section id="view-analytics" class="view">
+      <div id="analytics-empty" class="empty-state" style="display:none;">
+        <div class="em-icon">📊</div>
+        <h3>No data to chart yet</h3>
+        <p>Log a few trees and come back — charts build automatically from your field log.</p>
+      </div>
+      <div id="analytics-content">
+        <div class="stat-grid" id="stat-grid"></div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-num">📊</div><h2>Risk Rating Distribution</h2></div>
+          <div class="card-body"><div id="chart-risk"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-num">📍</div><h2>Trees by State</h2></div>
+          <div class="card-body"><div id="chart-state"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-num">🌲</div><h2>Top Species</h2></div>
+          <div class="card-body"><div id="chart-species"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-num">✅</div><h2>Field Determination</h2></div>
+          <div class="card-body"><div id="chart-determination"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-num">🏔️</div><h2>Land Manager</h2></div>
+          <div class="card-body"><div id="chart-landmanager"></div></div>
+        </div>
       </div>
     </section>
 
@@ -1158,6 +1220,7 @@
       document.getElementById("view-"+tab.dataset.view).classList.add("active");
       document.getElementById("form-action-bar").style.display = tab.dataset.view==="form" ? "flex" : "none";
       if(tab.dataset.view==="table") renderTable();
+      if(tab.dataset.view==="analytics") renderAnalytics();
     });
   });
 
@@ -1485,6 +1548,114 @@
     });
   }
 
+  /* ---------------- Analytics ---------------- */
+  const CHART_COLORS = ["#1B3A2E","#54724A","#C8871F","#BD4515","#7E1F1F","#2C5240","#8A6D3B","#4A6B5C"];
+
+  function renderBarChart(container, dataObj, options){
+    options = options || {};
+    const entriesArr = Object.entries(dataObj).sort((a,b)=> b[1]-a[1]);
+    const filtered = options.limit ? entriesArr.slice(0, options.limit) : entriesArr;
+    if(filtered.length===0){
+      container.innerHTML = `<div class="chart-empty-note">No data yet.</div>`;
+      return;
+    }
+    const max = Math.max(...filtered.map(e=>e[1]));
+    container.innerHTML = filtered.map(([label, count], i)=>{
+      const pct = max>0 ? Math.round((count/max)*100) : 0;
+      const color = options.colorFor ? options.colorFor(label) : CHART_COLORS[i % CHART_COLORS.length];
+      return `
+        <div class="chart-row">
+          <div class="chart-label" title="${escapeAttr(label)}">${escapeHtml(label)}</div>
+          <div class="chart-track"><div class="chart-fill" style="width:${pct}%;background:${color};"></div></div>
+          <div class="chart-value">${count}</div>
+        </div>`;
+    }).join("");
+  }
+
+  function riskColorFor(label){
+    const root = getComputedStyle(document.documentElement);
+    if(label==="Low") return root.getPropertyValue('--moss').trim();
+    if(label==="Moderate") return root.getPropertyValue('--amber').trim();
+    if(label==="High") return root.getPropertyValue('--rust').trim();
+    if(label==="Extremely High") return root.getPropertyValue('--deep-red').trim();
+    return root.getPropertyValue('--ink-soft').trim();
+  }
+
+  function renderAnalytics(){
+    const list = Object.values(entries);
+    const emptyEl = document.getElementById("analytics-empty");
+    const contentEl = document.getElementById("analytics-content");
+
+    if(list.length===0){
+      emptyEl.style.display = "block";
+      contentEl.style.display = "none";
+      return;
+    }
+    emptyEl.style.display = "none";
+    contentEl.style.display = "block";
+
+    // ---- Summary stats ----
+    const total = list.length;
+    const highPlus = list.filter(e=>{
+      const b = bandFor(e.riskRating);
+      return b.cls==="high" || b.cls==="extreme";
+    }).length;
+    const batRoostCount = list.filter(e=> (e.batRoost||"").startsWith("Yes")).length;
+    const dbhValues = list.map(e=>parseFloat(e.dbh)).filter(n=>!isNaN(n));
+    const avgDbh = dbhValues.length ? (dbhValues.reduce((a,b)=>a+b,0)/dbhValues.length).toFixed(1) : "—";
+
+    document.getElementById("stat-grid").innerHTML = `
+      <div class="stat-card"><span class="stat-value">${total}</span><span class="stat-label">Trees Logged</span></div>
+      <div class="stat-card"><span class="stat-value">${highPlus}</span><span class="stat-label">High + Extreme Risk</span></div>
+      <div class="stat-card"><span class="stat-value">${batRoostCount}</span><span class="stat-label">Potential Bat Roosts</span></div>
+      <div class="stat-card"><span class="stat-value">${avgDbh}"</span><span class="stat-label">Average DBH</span></div>
+    `;
+
+    // ---- Risk Rating Distribution ----
+    const riskCounts = {Low:0, Moderate:0, High:0, "Extremely High":0};
+    list.forEach(e=>{
+      const b = bandFor(e.riskRating);
+      if(b.label && riskCounts[b.label]!==undefined) riskCounts[b.label]++;
+    });
+    // Keep fixed Low→Extreme order rather than sorting by count, so severity reads left-to-right consistently.
+    const riskOrdered = {};
+    ["Low","Moderate","High","Extremely High"].forEach(k=>{ if(riskCounts[k]>0) riskOrdered[k]=riskCounts[k]; });
+    if(Object.keys(riskOrdered).length===0){
+      document.getElementById("chart-risk").innerHTML = `<div class="chart-empty-note">No scored trees yet.</div>`;
+    } else {
+      const maxRisk = Math.max(...Object.values(riskOrdered));
+      document.getElementById("chart-risk").innerHTML = Object.entries(riskOrdered).map(([label,count])=>{
+        const pct = maxRisk>0 ? Math.round((count/maxRisk)*100) : 0;
+        return `
+          <div class="chart-row">
+            <div class="chart-label">${escapeHtml(label)}</div>
+            <div class="chart-track"><div class="chart-fill" style="width:${pct}%;background:${riskColorFor(label)};"></div></div>
+            <div class="chart-value">${count}</div>
+          </div>`;
+      }).join("");
+    }
+
+    // ---- Trees by State ----
+    const byState = {};
+    list.forEach(e=>{ const k = e.state || "Unspecified"; byState[k] = (byState[k]||0)+1; });
+    renderBarChart(document.getElementById("chart-state"), byState);
+
+    // ---- Top Species ----
+    const bySpecies = {};
+    list.forEach(e=>{ const k = e.species || "Unspecified"; bySpecies[k] = (bySpecies[k]||0)+1; });
+    renderBarChart(document.getElementById("chart-species"), bySpecies, {limit:8});
+
+    // ---- Field Determination ----
+    const byDetermination = {};
+    list.forEach(e=>{ const k = e.determination || "Unspecified"; byDetermination[k] = (byDetermination[k]||0)+1; });
+    renderBarChart(document.getElementById("chart-determination"), byDetermination);
+
+    // ---- Land Manager ----
+    const byLandManager = {};
+    list.forEach(e=>{ const k = e.landManager || "Unspecified"; byLandManager[k] = (byLandManager[k]||0)+1; });
+    renderBarChart(document.getElementById("chart-landmanager"), byLandManager);
+  }
+
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   }
@@ -1546,7 +1717,10 @@
     const tabs = document.getElementById("tabs-row");
     if(sub && tabs){
       const w = sub.getBoundingClientRect().width;
-      if(w > 0) tabs.style.maxWidth = w + "px";
+      const tabCount = tabs.querySelectorAll(".tab").length || 3;
+      // Scale relative to the original 3-tab design so each tab keeps roughly
+      // the same width as before, rather than 4+ tabs squeezing into a 3-tab space.
+      if(w > 0) tabs.style.maxWidth = Math.round(w * (tabCount / 3)) + "px";
     }
   }
   syncTabsWidth();
