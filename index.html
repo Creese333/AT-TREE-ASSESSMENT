@@ -236,6 +236,15 @@
   .btn-primary{background:var(--forest);color:var(--white);}
   .btn-primary:active{background:var(--forest-dark);}
   .btn-secondary{background:var(--parchment-deep);color:var(--forest-dark);flex:0 0 auto;padding:13px 16px;}
+  .btn-primary.btn-saving{background:var(--forest-light);display:flex;align-items:center;justify-content:center;gap:9px;}
+  .btn-primary.btn-success{background:var(--moss);}
+  .btn-primary.btn-warn{background:var(--rust);}
+  .btn-spinner{
+    width:16px;height:16px;border-radius:50%;
+    border:2.5px solid rgba(255,255,255,0.35);border-top-color:#fff;
+    display:inline-block;animation:btn-spin .7s linear infinite;flex:0 0 auto;
+  }
+  @keyframes btn-spin{to{transform:rotate(360deg);}}
 
   /* table view */
   .table-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
@@ -334,7 +343,7 @@
   .code-row .desc b{display:block;color:var(--forest-dark);font-family:'Roboto Slab',serif;font-size:13px;margin-bottom:1px;}
   .note-box{
     background:var(--parchment-deep);border-left:3px solid var(--rust);padding:10px 12px;border-radius:0 8px 8px 0;
-    font-size:14px;line-height:1.5;color:var(--ink);margin-bottom:14px;
+    font-size:12px;line-height:1.5;color:var(--ink);margin-bottom:14px;
   }
 
   .toast{
@@ -561,7 +570,7 @@
 
     <!-- ============ GUIDE VIEW ============ -->
     <section id="view-guide" class="view">
-      <div class="note-box">For reference only and does not replace training or professional judgement.</div>
+      <div class="note-box">Reference only, adapted from the APPA Codes &amp; Scoring Guide. Use it to score consistently in the field — it doesn't replace training or professional judgment.</div>
 
       <div class="guide-section">
         <h3>Probability of Failure (1–4 pts)</h3>
@@ -751,6 +760,59 @@
     plantnetInput.click();
   });
 
+  // Smaller/lower-quality than the field-photo compression, since this image is never
+  // saved anywhere — it just needs to be small and fast to upload over shaky cellular.
+  function compressForIdentify(file){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Could not read file"));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Could not decode image"));
+        img.onload = () => {
+          const MAX_DIM = 900;
+          let w = img.width, h = img.height;
+          if(w > MAX_DIM || h > MAX_DIM){
+            const scale = MAX_DIM / Math.max(w,h);
+            w = Math.round(w*scale); h = Math.round(h*scale);
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.5));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function fetchWithTimeout(url, options, timeoutMs){
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), timeoutMs);
+    try{
+      return await fetch(url, {...options, signal: controller.signal});
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function identifyRequest(dataUrl, organ){
+    const IDENTIFY_TIMEOUT_MS = 25000;
+    try{
+      return await fetchWithTimeout(CONFIG.APPS_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action:"identify", token: CONFIG.SHARED_TOKEN, dataUrl, organ })
+      }, IDENTIFY_TIMEOUT_MS);
+    }catch(err){
+      // One quiet retry — cellular drops are often transient.
+      return await fetchWithTimeout(CONFIG.APPS_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action:"identify", token: CONFIG.SHARED_TOKEN, dataUrl, organ })
+      }, IDENTIFY_TIMEOUT_MS);
+    }
+  }
+
   plantnetInput.addEventListener("change", async (e)=>{
     const file = e.target.files[0];
     e.target.value = "";
@@ -762,12 +824,9 @@
     plantnetBtn.disabled = true;
 
     try{
-      const dataUrl = await compressImage(file);
+      const dataUrl = await compressForIdentify(file);
       const organ = (document.querySelector('input[name="organ"]:checked') || {}).value || "auto";
-      const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify({ action:"identify", token: CONFIG.SHARED_TOKEN, dataUrl, organ })
-      });
+      const res = await identifyRequest(dataUrl, organ);
       const data = await res.json();
       if(!data.ok) throw new Error(data.error || "identification failed");
 
@@ -784,7 +843,10 @@
       }).join("");
       plantnetResults.classList.add("show");
     }catch(err){
-      plantnetHint.textContent = `Couldn't identify: ${err.message}`;
+      const msg = err.name === "AbortError"
+        ? "Timed out — cellular connection may be too weak right now. Try again or move to better signal."
+        : err.message;
+      plantnetHint.textContent = `Couldn't identify: ${msg}`;
     }finally{
       plantnetBtn.disabled = false;
     }
@@ -1183,7 +1245,14 @@
     if(!entry) return;
     entries[entry.recordId] = entry;
     updateCountBadge();
-    document.getElementById("btn-save").disabled = true;
+    const btn = document.getElementById("btn-save");
+    const btnOriginalText = btn.textContent;
+    btn.disabled = true;
+    btn.classList.remove("btn-success","btn-warn");
+    btn.classList.add("btn-saving");
+    btn.innerHTML = `<span class="btn-spinner"></span> Saving ${entry.recordId}…`;
+
+    let outcome = "success"; // "success" | "warn"
     try{
       if(BACKEND_CONFIGURED){
         const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
@@ -1196,20 +1265,41 @@
         // holding large base64 strings in memory/local storage going forward.
         if(data.photos){ entries[entry.recordId].photos = data.photos; }
         if(data.photoErrors && data.photoErrors.length){
+          outcome = "warn";
           showToast(`Saved ${entry.recordId}, but ${data.photoErrors.length} photo(s) had a note: ${data.photoErrors[0]}`, true);
         } else {
           showToast(`Saved ${entry.recordId} — shared with the field log.`);
         }
       } else {
         saveLocal();
+        outcome = "warn";
         showToast(`Saved ${entry.recordId} locally (no backend configured — see CONFIG at top of the script).`, true);
       }
     } catch(err){
       storageAvailable = false;
       saveLocal();
+      outcome = "warn";
       showToast(`Saved ${entry.recordId} on this device only — ${err.message}`, true);
     }
-    document.getElementById("btn-save").disabled = false;
+
+    if(navigator.vibrate){ navigator.vibrate(outcome==="success" ? 60 : [40,60,40]); }
+
+    btn.classList.remove("btn-saving");
+    if(outcome==="success"){
+      btn.classList.add("btn-success");
+      btn.innerHTML = `✓ Saved ${entry.recordId}`;
+    } else {
+      btn.classList.add("btn-warn");
+      btn.innerHTML = `⚠ Saved locally — check log`;
+    }
+
+    // Hold the confirmation on screen briefly before clearing the form, so it's
+    // actually seen rather than flashing past.
+    await new Promise(r => setTimeout(r, 900));
+
+    btn.classList.remove("btn-success","btn-warn");
+    btn.disabled = false;
+    btn.textContent = btnOriginalText;
     resetForm(true);
   }
   document.getElementById("btn-save").addEventListener("click", saveEntry);
