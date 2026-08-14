@@ -543,8 +543,12 @@
               <label class="flabel">Wildlife / Bat Habitat Features Observed <span class="req">*</span></label>
               <div class="chip-grid" id="f-habitat"></div>
             </div>
-            <div class="bat-flag pending" id="bat-flag">Enter DBH and habitat features to auto-flag potential roost trees.</div>
             <div class="hint">Suitable NLEB/bat roost trees are live trees or snags ≥ 3" DBH with cavities, cracks, or exfoliating/loose bark. Confirmed roost trees route to the Bat Habitat Compliance review before removal (safe removal window: Nov 1–Mar 31).</div>
+            <div class="bat-flag pending" id="bat-flag">Enter DBH and habitat features to auto-flag potential roost trees.</div>
+            <div class="field" style="margin-top:14px;">
+              <label class="flabel">Observed Bat Indicators: <span class="req">*</span></label>
+              <div class="chip-grid" id="f-batIndicators"></div>
+            </div>
           </div>
         </div>
 
@@ -754,10 +758,11 @@
     ["2 - Intermediate Use","Moderate-use campsites, vistas, trail segments; secondary access roads."],
     ["3 - Frequent Use","Shelters, overnight sites, privies, trailheads, bridges, high-use vistas — any area of congregation."]
   ];
-  const HABITAT = ["None Observed","Exfoliating/Peeling Bark","Snags","Cavities","Cracks/Crevices","Split Trunk or Broken Top","Hollow Section(s)","Multiple Features (specify in notes)","Other Wildlife Sign (nest/den/scat)"];
+  const HABITAT = ["None Observed","Exfoliating/Peeling Bark","Snags","Cavities","Cracks/Crevices","Split Trunk or Broken Top","Hollow Section(s)","Multiple Features (specify in notes)"];
+  const BAT_INDICATORS = ["Nest","Den","Scat","Other","None"];
   const DETERMINATIONS = ["No Hazard - Monitor Not Needed","Defect Confirmed - Monitor","Hazard Confirmed - Recommend Removal"];
 
-  const CSV_COLUMNS = ["Record ID","Site Name","Date","Inspector(s)","Land Manager","State","Latitude","Longitude","Area of Congregation","Tree Tag #","Species","DBH (in.)","Defect(s) Observed","Probability of Failure","Size of Defective Part","Probability of Target Impact","Risk Rating","Wildlife/Bat Habitat Features Observed","Potential Bat Roost Tree?","Field Determination","Photos Taken?","Photo File(s)/Reference","Notes"];
+  const CSV_COLUMNS = ["Record ID","Site Name","Date","Inspector(s)","Land Manager","State","Latitude","Longitude","Area of Congregation","Tree Tag #","Species","DBH (in.)","Defect(s) Observed","Probability of Failure","Size of Defective Part","Probability of Target Impact","Risk Rating","Wildlife/Bat Habitat Features Observed","Observed Bat Indicators","Potential Bat Roost Tree?","Field Determination","Photos Taken?","Photo File(s)/Reference","Notes"];
 
   /* ---------------- State ---------------- */
   /* ================= CONFIGURE THIS ================= */
@@ -1100,6 +1105,7 @@
   }
   buildChips(document.getElementById("f-defects"), DEFECTS.map(d=>d[1]), "defect");
   buildChips(document.getElementById("f-habitat"), HABITAT, "habitat");
+  buildChips(document.getElementById("f-batIndicators"), BAT_INDICATORS, "batIndicator");
 
   // habitat "None Observed" exclusivity
   document.getElementById("f-habitat").addEventListener("change", e=>{
@@ -1111,6 +1117,17 @@
       boxes.forEach(b=>{ if(b.value==="None Observed") b.checked=false; });
     }
     updateBatFlag();
+  });
+
+  // bat indicators "None" exclusivity
+  document.getElementById("f-batIndicators").addEventListener("change", e=>{
+    if(e.target.name !== "batIndicator") return;
+    const boxes = [...document.querySelectorAll('input[name="batIndicator"]')];
+    if(e.target.value === "None" && e.target.checked){
+      boxes.forEach(b=>{ if(b.value!=="None") b.checked=false; });
+    } else if(e.target.checked){
+      boxes.forEach(b=>{ if(b.value==="None") b.checked=false; });
+    }
   });
 
   function buildScoreCards(container, options, name){
@@ -1265,6 +1282,7 @@
     const defects = [...document.querySelectorAll('input[name="defect"]:checked')].map(b=>b.value);
     const pof = getSelected("pof"), size = getSelected("size"), impact = getSelected("impact");
     const habitats = [...document.querySelectorAll('input[name="habitat"]:checked')].map(b=>b.value);
+    const batIndicators = [...document.querySelectorAll('input[name="batIndicator"]:checked')].map(b=>b.value);
     const determination = document.getElementById("f-determination").value;
 
     const errors = [];
@@ -1279,6 +1297,7 @@
     if(!size) errors.push("Size of Defective Part");
     if(!impact) errors.push("Probability of Target Impact");
     if(habitats.length===0) errors.push("Wildlife/Bat Habitat Features");
+    if(batIndicators.length===0) errors.push("Observed Bat Indicators");
     if(!determination) errors.push("Field Determination");
 
     if(errors.length){
@@ -1302,6 +1321,7 @@
       pof, size, impact,
       riskRating,
       habitats: habitats.join("; "),
+      batIndicators: batIndicators.join("; "),
       batRoost,
       determination,
       photosTaken,
@@ -1399,6 +1419,10 @@
     if(entry.impact) document.querySelector(`input[name="impact"][value="${CSS.escape(entry.impact)}"]`).checked = true;
     (entry.habitats||"").split("; ").filter(Boolean).forEach(v=>{
       const box = document.querySelector(`input[name="habitat"][value="${CSS.escape(v)}"]`);
+      if(box) box.checked = true;
+    });
+    (entry.batIndicators||"").split("; ").filter(Boolean).forEach(v=>{
+      const box = document.querySelector(`input[name="batIndicator"][value="${CSS.escape(v)}"]`);
       if(box) box.checked = true;
     });
     document.getElementById("f-determination").value = entry.determination || "";
@@ -1680,7 +1704,7 @@
       rows.push([
         e.recordId, e.siteName, e.date, e.inspector, e.landManager, e.state, e.lat, e.lng,
         e.area, e.tag, e.species, e.dbh, e.defects, e.pof, e.size, e.impact, e.riskRating,
-        e.habitats, e.batRoost, e.determination, e.photosTaken, e.photoRef, e.notes
+        e.habitats, e.batIndicators, e.batRoost, e.determination, e.photosTaken, e.photoRef, e.notes
       ]);
     });
     const csv = rows.map(r=>r.map(toCsvValue).join(",")).join("\r\n");
