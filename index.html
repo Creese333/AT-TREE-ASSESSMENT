@@ -1483,6 +1483,7 @@
       document.getElementById("f-recordId").value = suggestNextId();
       return;
     }
+    document.getElementById("entries-container").innerHTML = `<div class="empty-state"><div class="em-icon">↻</div><p>Loading field log…</p></div>`;
     try{
       const res = await fetch(CONFIG.APPS_SCRIPT_URL, { method:"GET" });
       const data = await res.json();
