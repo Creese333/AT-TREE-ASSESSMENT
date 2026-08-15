@@ -344,6 +344,8 @@
   .leaflet-popup-content b{font-family:'Roboto Slab',serif;font-size:13.5px;color:var(--forest-dark);}
   .map-popup-eid{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);}
   .map-popup-row{font-size:12.5px;margin-top:3px;}
+  .map-popup-row a{color:var(--rust);font-weight:700;text-decoration:none;}
+  .map-popup-row a:active{text-decoration:underline;}
   .empty-state .em-icon{font-size:36px;margin-bottom:10px;}
   .empty-state h3{color:var(--forest-dark);margin-bottom:6px;font-size:16px;}
   .empty-state p{font-size:13px;line-height:1.5;max-width:320px;margin:0 auto;}
@@ -413,8 +415,8 @@
     <div class="tabs" id="tabs-row">
       <button class="tab active" data-view="form"><span class="tab-icon">📋</span><span class="tab-label">Log a Tree</span></button>
       <button class="tab" data-view="table"><span class="tab-icon">🗂️</span><span class="tab-label">Field Log<span class="badge" id="count-badge">0</span></span></button>
-      <button class="tab" data-view="map"><span class="tab-icon">🗺️</span><span class="tab-label">Map</span></button>
       <button class="tab" data-view="guide"><span class="tab-icon">📖</span><span class="tab-label">Scoring Guide</span></button>
+      <button class="tab" data-view="map"><span class="tab-icon">🗺️</span><span class="tab-label">Map</span></button>
       <button class="tab" data-view="analytics"><span class="tab-icon">📊</span><span class="tab-label">Analytics</span></button>
     </div>
   </div>
@@ -1659,12 +1661,16 @@
         fillOpacity: 0.92
       });
       const riskText = (e.riskRating!==undefined && e.riskRating!==null && e.riskRating!=="") ? `${e.riskRating}/10 — ${band.label||"Unscored"}` : "Unscored";
+      const firstPhoto = (e.photos && e.photos.length) ? (e.photos[0].driveLink || e.photos[0].url) : null;
+      const photoLink = firstPhoto ? `<div class="map-popup-row"><a href="${escapeAttr(firstPhoto)}" target="_blank" rel="noopener">📷 View Photo</a></div>` : "";
       marker.bindPopup(`
         <div class="map-popup-eid">${escapeHtml(e.recordId||"")}</div>
         <b>${escapeHtml(e.siteName||"Untitled site")}</b>
         <div class="map-popup-row"><b style="font-size:12.5px;">Species:</b> ${escapeHtml(e.species||"—")}</div>
         <div class="map-popup-row"><b style="font-size:12.5px;">Risk Rating:</b> ${escapeHtml(riskText)}</div>
         <div class="map-popup-row"><b style="font-size:12.5px;">Determination:</b> ${escapeHtml(e.determination||"—")}</div>
+        <div class="map-popup-row"><b style="font-size:12.5px;">Land Manager:</b> ${escapeHtml(e.landManager||"—")}</div>
+        ${photoLink}
       `);
       marker.addTo(treeMapMarkers);
       bounds.push([lat, lng]);
