@@ -659,9 +659,19 @@
 
       <div class="guide-section">
         <h3>Probability of Target Impact (1–3 pts, A.T. context)</h3>
-        <div class="code-row"><div class="code">1 · Occas.</div><div class="desc">Low-use side/relocation trails; boundary lines and non-congregation corridor segments; dispersed/undesignated areas with limited public use.</div></div>
-        <div class="code-row"><div class="code">2 · Interm.</div><div class="desc">Moderate-use campsites, vistas, or trail segments; secondary access roads and parking adjacent to moderate-use sites.</div></div>
-        <div class="code-row"><div class="code">3 · Frequent</div><div class="desc">Shelters, designated overnight sites, privies, trailheads, bridges, high-use vistas, parking adjacent to high-use sites, and any area of congregation per ATC guidance.</div></div>
+        <div class="code-row"><div class="code">1 · Occas.</div><div class="desc">Low-use side trails; boundary lines.</div></div>
+        <div class="code-row"><div class="code">2 · Interm.</div><div class="desc">Informal-use campsites, vistas, trail segments; secondary access roads.</div></div>
+        <div class="code-row"><div class="code">3 · Frequent</div><div class="desc">Shelters, formal overnight sites, privies, trailheads, bridges, high-use vistas — any area of congregation.</div></div>
+        <div class="hint" style="margin-top:2px;">Appendix A below determines the Tier 2 / Tier 3 line for campsites specifically: a site meeting any of its criteria is a formal overnight site (Tier 3); an opportunistic, user-created site that meets none of them is a Tier 2 moderate-use campsite instead.</div>
+      </div>
+
+      <div class="guide-section">
+        <h3>Appendix A: Formal Overnight Site Identification</h3>
+        <div class="hint" style="margin-bottom:8px;">Use the following to differentiate formally managed overnight sites (Frequent Use, Tier 3) from opportunistic, user-created overnight sites (Moderate Use, Tier 2):</div>
+        <div class="code-row"><div class="code">FMSS</div><div class="desc">The land manager has determined it to be a formal site, and it exists in the Facility Management Software System (FMSS) inventory.</div></div>
+        <div class="code-row"><div class="code">Signage</div><div class="desc">The site has an agency-recognized name and signage referencing it as an overnight site.</div></div>
+        <div class="code-row"><div class="code">Improve.</div><div class="desc">Site improvements have been approved by agencies and implemented by A.T. managers, such as a shelter, privy, constructed tent pads or platforms, food storage infrastructure, sign board, kiosk, or site map.</div></div>
+        <div class="code-row"><div class="code">ATC Map</div><div class="desc">May also be referenced on ATC's Interactive Map, built cooperatively by the Appalachian Trail Conservancy (ATC) and National Park Service using Esri's ArcGIS Online mapping technology: <a href="https://appalachiantrail.org/explore/hike-the-a-t/interactive-map/" target="_blank" rel="noopener">appalachiantrail.org/explore/hike-the-a-t/interactive-map</a>.</div></div>
       </div>
 
       <div class="guide-section">
@@ -790,12 +800,12 @@
     ["3 - >20 in. diameter","Parts greater than 20 inches in diameter."]
   ];
   const IMPACT = [
-    ["1 - Occasional Use","Low-use side/relocation trails; boundary lines; dispersed areas."],
-    ["2 - Intermediate Use","Moderate-use campsites, vistas, trail segments; secondary access roads."],
-    ["3 - Frequent Use","Shelters, overnight sites, privies, trailheads, bridges, high-use vistas — any area of congregation."]
+    ["1 - Occasional Use","Low-use side trails; boundary lines."],
+    ["2 - Intermediate Use","Informal-use campsites, vistas, trail segments; secondary access roads."],
+    ["3 - Frequent Use","Shelters, formal overnight sites, privies, trailheads, bridges, high-use vistas — any area of congregation."]
   ];
   const HABITAT = ["None Observed","Exfoliating/Peeling Bark","Snags","Cavities","Cracks/Crevices","Split Trunk or Broken Top","Hollow Section(s)","Multiple Features (specify in notes)"];
-  const BAT_INDICATORS = ["Nest","Den","Scat","Other","None"];
+  const BAT_INDICATORS = ["None","Nest","Den","Scat","Other"];
   const DETERMINATIONS = ["No Hazard - Monitor Not Needed","Defect Confirmed - Monitor","Hazard Confirmed - Recommend Removal"];
 
   const CSV_COLUMNS = ["Record ID","Site Name","Date","Inspector(s)","Land Manager","State","Latitude","Longitude","Area of Congregation","Tree Tag #","Species","DBH (in.)","Defect(s) Observed","Probability of Failure","Size of Defective Part","Probability of Target Impact","Risk Rating","Wildlife/Bat Habitat Features Observed","Observed Bat Indicators","Potential Bat Roost Tree?","Field Determination","Recommended Date of Removal","Emergency Removal Period","Photos Taken?","Photo File(s)/Reference","Notes"];
