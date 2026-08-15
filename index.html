@@ -576,6 +576,11 @@
               <select id="f-determination" required></select>
             </div>
             <div class="field">
+              <label class="flabel">Recommended Date of Removal (if needed)</label>
+              <input type="date" id="f-removalDate">
+              <div class="bat-flag pending" id="removal-window-flag" style="display:none;"></div>
+            </div>
+            <div class="field">
               <label class="flabel">Photos Taken?</label>
               <div class="toggle-row">
                 <button type="button" class="toggle-btn" data-photos="Yes">Yes</button>
@@ -793,7 +798,7 @@
   const BAT_INDICATORS = ["Nest","Den","Scat","Other","None"];
   const DETERMINATIONS = ["No Hazard - Monitor Not Needed","Defect Confirmed - Monitor","Hazard Confirmed - Recommend Removal"];
 
-  const CSV_COLUMNS = ["Record ID","Site Name","Date","Inspector(s)","Land Manager","State","Latitude","Longitude","Area of Congregation","Tree Tag #","Species","DBH (in.)","Defect(s) Observed","Probability of Failure","Size of Defective Part","Probability of Target Impact","Risk Rating","Wildlife/Bat Habitat Features Observed","Observed Bat Indicators","Potential Bat Roost Tree?","Field Determination","Photos Taken?","Photo File(s)/Reference","Notes"];
+  const CSV_COLUMNS = ["Record ID","Site Name","Date","Inspector(s)","Land Manager","State","Latitude","Longitude","Area of Congregation","Tree Tag #","Species","DBH (in.)","Defect(s) Observed","Probability of Failure","Size of Defective Part","Probability of Target Impact","Risk Rating","Wildlife/Bat Habitat Features Observed","Observed Bat Indicators","Potential Bat Roost Tree?","Field Determination","Recommended Date of Removal","Emergency Removal Period","Photos Taken?","Photo File(s)/Reference","Notes"];
 
   /* ---------------- State ---------------- */
   /* ================= CONFIGURE THIS ================= */
@@ -1239,6 +1244,40 @@
     }
   }
 
+  // Safe removal window per the BA: Nov 1 – Mar 31. Any recommended removal date
+  // falling Apr 1 – Oct 31 is outside that window and gets flagged for the
+  // imminent-hazard exception / pre-work bat check pathway rather than routine removal.
+  function isOutsideSafeRemovalWindow(dateStr){
+    if(!dateStr) return null;
+    const parts = dateStr.split("-");
+    if(parts.length!==3) return null;
+    const month = parseInt(parts[1], 10);
+    if(isNaN(month)) return null;
+    return month>=4 && month<=10;
+  }
+  function updateRemovalWindowFlag(){
+    const dateVal = document.getElementById("f-removalDate").value;
+    const flagEl = document.getElementById("removal-window-flag");
+    const outside = isOutsideSafeRemovalWindow(dateVal);
+    if(outside===null){
+      flagEl.style.display = "none";
+      flagEl.className = "bat-flag pending";
+      flagEl.textContent = "";
+      return "";
+    }
+    flagEl.style.display = "flex";
+    if(outside){
+      flagEl.className = "bat-flag yes";
+      flagEl.textContent = "⚠ Emergency Removal Period — outside the Nov 1–Mar 31 safe removal window. Requires imminent hazard justification and pre-work bat check.";
+      return "Yes";
+    } else {
+      flagEl.className = "bat-flag no";
+      flagEl.textContent = "Within the Nov 1–Mar 31 safe removal window.";
+      return "No";
+    }
+  }
+  document.getElementById("f-removalDate").addEventListener("change", updateRemovalWindowFlag);
+
   /* photos toggle */
   document.querySelectorAll("[data-photos]").forEach(btn=>{
     btn.addEventListener("click", ()=>{
@@ -1298,6 +1337,7 @@
     renderPhotoThumbs();
     updateRisk();
     updateBatFlag();
+    updateRemovalWindowFlag();
     editingId = null;
     document.getElementById("edit-indicator").style.display = "none";
     document.getElementById("btn-save").textContent = "Save Tree to Log";
@@ -1356,6 +1396,8 @@
       batIndicators: batIndicators.join("; "),
       batRoost,
       determination,
+      removalDate: document.getElementById("f-removalDate").value,
+      emergencyRemoval: updateRemovalWindowFlag(),
       photosTaken,
       photoRef: document.getElementById("f-photoref").value.trim(),
       photos: currentPhotos.slice(),
@@ -1458,6 +1500,8 @@
       if(box) box.checked = true;
     });
     document.getElementById("f-determination").value = entry.determination || "";
+    document.getElementById("f-removalDate").value = entry.removalDate || "";
+    updateRemovalWindowFlag();
     photosTaken = entry.photosTaken || "No";
     document.querySelectorAll("[data-photos]").forEach(b=>b.classList.toggle("active", b.dataset.photos===photosTaken));
     document.getElementById("f-photoref").value = entry.photoRef || "";
@@ -1575,6 +1619,7 @@
           <div><b>Inspector</b><span>${escapeHtml(e.inspector||'—')}</span></div>
           <div><b>Bat Roost</b><span class="bat-pill ${batYes?'yes':'no'}">${batYes?'Yes':'No'}</span></div>
           <div><b>Bat Indicators</b><span>${escapeHtml(e.batIndicators||'—')}</span></div>
+          ${e.removalDate ? `<div><b>Removal Date</b><span>${escapeHtml(e.removalDate)}${e.emergencyRemoval==='Yes' ? ' <span class="bat-pill yes">Emergency Period</span>' : ''}</span></div>` : ""}
           <div class="entry-full"><b>Defects</b><span>${escapeHtml(e.defects||'—')}</span></div>
           ${e.notes ? `<div class="entry-full"><b>Notes</b><span>${escapeHtml(e.notes)}</span></div>` : ""}
         </div>
@@ -1813,7 +1858,7 @@
       rows.push([
         e.recordId, e.siteName, e.date, e.inspector, e.landManager, e.state, e.lat, e.lng,
         e.area, e.tag, e.species, e.dbh, e.defects, e.pof, e.size, e.impact, e.riskRating,
-        e.habitats, e.batIndicators, e.batRoost, e.determination, e.photosTaken, e.photoRef, e.notes
+        e.habitats, e.batIndicators, e.batRoost, e.determination, e.removalDate, e.emergencyRemoval, e.photosTaken, e.photoRef, e.notes
       ]);
     });
     const csv = rows.map(r=>r.map(toCsvValue).join(",")).join("\r\n");
