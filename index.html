@@ -336,7 +336,7 @@
   .bat-pill.no{background:var(--parchment-deep);color:var(--ink-soft);}
 
   .empty-state{text-align:center;padding:50px 20px;color:var(--ink-soft);}
-  #tree-map{width:100%;height:62vh;min-height:360px;border-radius:var(--radius);border:1px solid var(--line);box-shadow:var(--shadow);}
+  #tree-map{width:100%;height:62vh;min-height:360px;border-radius:var(--radius);border:1px solid var(--line);box-shadow:var(--shadow);position:relative;z-index:0;isolation:isolate;}
   .map-legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:12px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:8px;}
   .map-legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink);font-weight:600;}
   .map-dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;display:inline-block;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,0.6);}
@@ -628,7 +628,7 @@
           <span class="map-legend-item"><span class="map-dot" style="background:var(--rust);"></span>High</span>
           <span class="map-legend-item"><span class="map-dot" style="background:var(--deep-red);"></span>Extremely High</span>
           <span class="map-legend-item"><span class="map-dot" style="background:var(--ink-soft);"></span>Unscored</span>
-          <span class="map-legend-item"><span class="map-line-swatch"></span>Appalachian Trail</span>
+          <span class="map-legend-item"><span class="map-line-swatch"></span>A.T. Corridor</span>
         </div>
       </div>
     </section>
