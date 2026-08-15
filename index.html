@@ -6,6 +6,8 @@
 <title>A.T. High-Risk Tree Assessment</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500;700;900&family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
   :root{
     --forest:#1B3A2E;
@@ -334,6 +336,14 @@
   .bat-pill.no{background:var(--parchment-deep);color:var(--ink-soft);}
 
   .empty-state{text-align:center;padding:50px 20px;color:var(--ink-soft);}
+  #tree-map{width:100%;height:62vh;min-height:360px;border-radius:var(--radius);border:1px solid var(--line);box-shadow:var(--shadow);}
+  .map-legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:12px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:8px;}
+  .map-legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink);font-weight:600;}
+  .map-dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;display:inline-block;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,0.6);}
+  .leaflet-popup-content-wrapper{border-radius:8px;font-family:'Inter',sans-serif;}
+  .leaflet-popup-content b{font-family:'Roboto Slab',serif;font-size:13.5px;color:var(--forest-dark);}
+  .map-popup-eid{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);}
+  .map-popup-row{font-size:12.5px;margin-top:3px;}
   .empty-state .em-icon{font-size:36px;margin-bottom:10px;}
   .empty-state h3{color:var(--forest-dark);margin-bottom:6px;font-size:16px;}
   .empty-state p{font-size:13px;line-height:1.5;max-width:320px;margin:0 auto;}
@@ -403,6 +413,7 @@
     <div class="tabs" id="tabs-row">
       <button class="tab active" data-view="form"><span class="tab-icon">📋</span><span class="tab-label">Log a Tree</span></button>
       <button class="tab" data-view="table"><span class="tab-icon">🗂️</span><span class="tab-label">Field Log<span class="badge" id="count-badge">0</span></span></button>
+      <button class="tab" data-view="map"><span class="tab-icon">🗺️</span><span class="tab-label">Map</span></button>
       <button class="tab" data-view="guide"><span class="tab-icon">📖</span><span class="tab-label">Scoring Guide</span></button>
       <button class="tab" data-view="analytics"><span class="tab-icon">📊</span><span class="tab-label">Analytics</span></button>
     </div>
@@ -602,6 +613,25 @@
         <button class="tb-btn primary" id="btn-export">⬇ Download CSV</button>
       </div>
       <div id="entries-container"></div>
+    </section>
+
+    <!-- ============ MAP VIEW ============ -->
+    <section id="view-map" class="view">
+      <div id="map-empty" class="empty-state" style="display:none;">
+        <div class="em-icon">🗺️</div>
+        <h3>No mapped trees yet</h3>
+        <p>Entries with GPS coordinates will appear here as pins, color-coded by Risk Rating.</p>
+      </div>
+      <div id="map-content" style="display:none;">
+        <div id="tree-map"></div>
+        <div class="map-legend">
+          <span class="map-legend-item"><span class="map-dot" style="background:var(--moss);"></span>Low</span>
+          <span class="map-legend-item"><span class="map-dot" style="background:var(--amber);"></span>Moderate</span>
+          <span class="map-legend-item"><span class="map-dot" style="background:var(--rust);"></span>High</span>
+          <span class="map-legend-item"><span class="map-dot" style="background:var(--deep-red);"></span>Extremely High</span>
+          <span class="map-legend-item"><span class="map-dot" style="background:var(--ink-soft);"></span>Unscored</span>
+        </div>
+      </div>
     </section>
 
     <!-- ============ GUIDE VIEW ============ -->
@@ -1240,6 +1270,7 @@
       document.getElementById("view-"+tab.dataset.view).classList.add("active");
       document.getElementById("form-action-bar").style.display = tab.dataset.view==="form" ? "flex" : "none";
       if(tab.dataset.view==="table") renderTable();
+      if(tab.dataset.view==="map") renderMap();
       if(tab.dataset.view==="analytics") renderAnalytics();
     });
   });
@@ -1575,6 +1606,74 @@
     container.querySelectorAll("[data-del]").forEach(btn=>{
       btn.addEventListener("click", ()=> deleteEntry(btn.dataset.del));
     });
+  }
+
+  /* ---------------- Map ---------------- */
+  const MAP_BAND_COLORS = { low: "#54724A", moderate: "#C8871F", high: "#BD4515", extreme: "#7E1F1F" };
+  const MAP_UNSCORED_COLOR = "#615E4E";
+  let treeMap = null;
+  let treeMapMarkers = null;
+
+  function initTreeMap(){
+    if(treeMap) return;
+    treeMap = L.map("tree-map", { scrollWheelZoom: true });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(treeMap);
+    treeMapMarkers = L.layerGroup().addTo(treeMap);
+  }
+
+  function renderMap(){
+    const list = Object.values(entries).filter(e=>{
+      const lat = parseFloat(e.lat), lng = parseFloat(e.lng);
+      return !isNaN(lat) && !isNaN(lng) && lat!==0 && lng!==0;
+    });
+    const emptyEl = document.getElementById("map-empty");
+    const contentEl = document.getElementById("map-content");
+
+    if(list.length===0){
+      emptyEl.style.display = "block";
+      contentEl.style.display = "none";
+      return;
+    }
+    emptyEl.style.display = "none";
+    contentEl.style.display = "block";
+
+    initTreeMap();
+    // The map div was hidden (display:none) until just now — Leaflet needs a nudge
+    // once it's actually visible, or tiles render blank/mis-sized.
+    setTimeout(()=> treeMap.invalidateSize(), 50);
+
+    treeMapMarkers.clearLayers();
+    const bounds = [];
+    list.forEach(e=>{
+      const lat = parseFloat(e.lat), lng = parseFloat(e.lng);
+      const band = bandFor(e.riskRating);
+      const color = band.cls ? (MAP_BAND_COLORS[band.cls] || MAP_UNSCORED_COLOR) : MAP_UNSCORED_COLOR;
+      const marker = L.circleMarker([lat, lng], {
+        radius: 9,
+        color: "#fff",
+        weight: 2,
+        fillColor: color,
+        fillOpacity: 0.92
+      });
+      const riskText = (e.riskRating!==undefined && e.riskRating!==null && e.riskRating!=="") ? `${e.riskRating}/10 — ${band.label||"Unscored"}` : "Unscored";
+      marker.bindPopup(`
+        <div class="map-popup-eid">${escapeHtml(e.recordId||"")}</div>
+        <b>${escapeHtml(e.siteName||"Untitled site")}</b>
+        <div class="map-popup-row"><b style="font-size:12.5px;">Species:</b> ${escapeHtml(e.species||"—")}</div>
+        <div class="map-popup-row"><b style="font-size:12.5px;">Risk Rating:</b> ${escapeHtml(riskText)}</div>
+        <div class="map-popup-row"><b style="font-size:12.5px;">Determination:</b> ${escapeHtml(e.determination||"—")}</div>
+      `);
+      marker.addTo(treeMapMarkers);
+      bounds.push([lat, lng]);
+    });
+    if(bounds.length===1){
+      treeMap.setView(bounds[0], 15);
+    } else if(bounds.length>1){
+      treeMap.fitBounds(bounds, { padding: [30,30] });
+    }
   }
 
   /* ---------------- Analytics ---------------- */
