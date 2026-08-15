@@ -5,7 +5,7 @@
 This is a field data collection tool, built as a static web app 
 (GitHub Pages) with a Google Apps Script / Google Sheets backend. 
 It is not a public software package with versioned releases as it's 
-a living single-file app maintained for APPA staff,
+a living single-file app maintained for staff,
 ATC staff, and trained A.T. Club volunteers.
 
 ## Data Handled
